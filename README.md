@@ -35,6 +35,8 @@ pnpm install
 pnpm -r typecheck && pnpm test && pnpm lint   # needs no network and no API keys
 ```
 
+Every model call goes through `@sdd/llm`. Set `LLM_MODE=mock` to run agents with no keys and no network (fixtures and offline embeddings); see [`packages/llm/README.md`](packages/llm/README.md).
+
 To use the Context Agent console:
 
 ```bash
