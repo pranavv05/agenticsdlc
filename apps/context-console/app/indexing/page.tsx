@@ -1,156 +1,255 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
+type Strategy = "full" | "claude-md-only";
 type Counts = Record<string, number | string>;
-type RepoProgress = { stage: string; stages: Record<string, Counts>; error?: string };
-type Run = {
-  id: number;
+interface Repo {
+  id: string;
+  name: string;
+  source: { type: "path" | "url"; value: string };
+  status: "profiling" | "profiled" | "indexing" | "indexed" | "failed";
+  profile: {
+    totalFiles: number;
+    totalLoc: number;
+    languages: { language: string; files: number; loc: number }[];
+    recommendation: Strategy;
+    reason: string;
+  } | null;
+  indexStrategy: Strategy | null;
+  indexedCommitSha: string | null;
+  indexedAt: string | null;
+  error?: string;
+}
+interface Run {
+  repoId: string;
   status: "running" | "done" | "error";
-  startedAt: string;
-  finishedAt: string | null;
-  perRepoProgress: Record<string, RepoProgress>;
-};
+  mode: "full" | "incremental" | null;
+  progress: Record<string, Counts>;
+  error: string | null;
+}
 
 const STEPS: { key: string; label: string; detail: (c: Counts) => string }[] = [
   { key: "plan", label: "Plan", detail: (c) => `${c.kind}: ${c.reason}` },
   { key: "files", label: "Files found", detail: (c) => `${c.source} source / ${c.total} total` },
   { key: "chunks", label: "Chunks created", detail: (c) => `${c.chunks} chunks in ${c.files} files` },
-  { key: "embeddings", label: "Embeddings done", detail: (c) => `${c.done}/${c.total}${c.reused ? ` (${c.reused} chunks reused)` : ""}` },
   { key: "dependencies", label: "Dependencies", detail: (c) => `${c.edges} import edges` },
+  { key: "embeddings", label: "Embeddings", detail: (c) => `${c.done}/${c.total}${c.reused ? ` (${c.reused} chunks reused)` : ""}` },
   {
     key: "claude_md",
-    label: "CLAUDE.md generated",
+    label: "CLAUDE.md files",
     detail: (c) => `${c.written ?? 0}/${c.rewriting ?? c.modules} module docs${c.root ? " + root" : ""}`,
   },
-  { key: "mindmap", label: "Mindmap generated", detail: (c) => (c.diagrams ? "written to output/" : "unchanged") },
+  { key: "mindmap", label: "Mindmap", detail: (c) => (c.diagrams ? "written" : "unchanged") },
 ];
 
-function StepRow({ step, p }: { step: (typeof STEPS)[number]; p: RepoProgress }) {
-  const counts = p.stages[step.key];
-  const complete = counts?.complete === 1;
-  const failed = p.stage === "error" && !complete && !!counts;
-  const icon = complete ? "✓" : failed ? "✗" : counts ? "…" : "○";
-  const color = complete ? "text-green-600" : failed ? "text-red-600" : counts ? "text-amber-600" : "text-slate-300";
+const STATUS_STYLE: Record<Repo["status"], string> = {
+  profiling: "bg-amber-100 text-amber-800",
+  profiled: "bg-slate-100 text-slate-800",
+  indexing: "bg-blue-100 text-blue-800",
+  indexed: "bg-green-100 text-green-800",
+  failed: "bg-red-100 text-red-800",
+};
+
+async function api<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, { cache: "no-store", ...init });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error?.message ?? res.statusText);
+  return json as T;
+}
+
+function Progress({ run }: { run: Run }) {
   return (
-    <li className="flex items-center gap-3 py-1 text-sm">
-      <span className={`w-4 text-center font-bold ${color}`}>{icon}</span>
-      <span className="w-44">{step.label}</span>
-      <span className="text-slate-500">{counts ? step.detail(counts) : "waiting"}</span>
-    </li>
+    <ul className="mt-2">
+      {STEPS.filter((s) => run.progress[s.key]).map((s) => {
+        const counts = run.progress[s.key];
+        const complete = counts.complete === 1;
+        const failed = run.status === "error" && !complete;
+        return (
+          <li key={s.key} className="flex items-center gap-3 py-0.5 text-xs">
+            <span className={`w-4 text-center font-bold ${complete ? "text-green-600" : failed ? "text-red-600" : "text-amber-600"}`}>
+              {complete ? "✓" : failed ? "✗" : "…"}
+            </span>
+            <span className="w-28">{s.label}</span>
+            <span className="text-slate-500">{s.detail(counts)}</span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
-export default function IndexPage() {
-  const [run, setRun] = useState<Run | null>(null);
+export default function IndexingPage() {
+  const [repos, setRepos] = useState<Repo[]>([]);
+  const [runs, setRuns] = useState<Run[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [starting, setStarting] = useState(false);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [name, setName] = useState("");
+  const [sourceType, setSourceType] = useState<"path" | "url">("path");
+  const [sourceValue, setSourceValue] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [strategy, setStrategy] = useState<Record<string, Strategy | "auto">>({});
 
-  const fetchStatus = useCallback(async (runId?: number) => {
+  const refresh = useCallback(async () => {
     try {
-      const res = await fetch(`/api/index/status${runId ? `?runId=${runId}` : ""}`, { cache: "no-store" });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? res.statusText);
-      setRun(json.run);
-      return json.run as Run | null;
+      const [r, s] = await Promise.all([api<{ items: Repo[] }>("/api/repos"), api<{ items: Run[] }>("/api/index/status")]);
+      setRepos(r.items);
+      setRuns(s.items);
     } catch (e) {
       setError((e as Error).message);
-      return null;
     }
   }, []);
 
-  // Load the latest run on mount so progress survives a page refresh.
   useEffect(() => {
-    void fetchStatus();
-  }, [fetchStatus]);
+    void refresh();
+  }, [refresh]);
 
-  // Poll every 2s while a run is in flight.
+  // poll while anything is running
+  const working = repos.some((r) => r.status === "profiling" || r.status === "indexing");
   useEffect(() => {
-    if (run?.status !== "running") return;
-    timer.current = setInterval(() => void fetchStatus(run.id), 2000);
-    return () => {
-      if (timer.current) clearInterval(timer.current);
-    };
-  }, [run?.status, run?.id, fetchStatus]);
+    if (!working) return;
+    const t = setInterval(() => void refresh(), 2000);
+    return () => clearInterval(t);
+  }, [working, refresh]);
 
-  async function start() {
-    setStarting(true);
+  async function register() {
+    setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/index", { method: "POST" });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? res.statusText);
-      await fetchStatus(json.runId);
+      await api("/api/repos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, source: { type: sourceType, value: sourceValue } }),
+      });
+      setName("");
+      setSourceValue("");
+      await refresh();
     } catch (e) {
       setError((e as Error).message);
     } finally {
-      setStarting(false);
+      setBusy(false);
     }
   }
 
-  const repos = run ? Object.entries(run.perRepoProgress) : [];
-  const running = run?.status === "running";
+  async function index(repo: Repo) {
+    setError(null);
+    try {
+      const chosen = strategy[repo.id];
+      await api(`/api/repos/${repo.id}/index`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(chosen && chosen !== "auto" ? { strategy: chosen } : {}),
+      });
+      await refresh();
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
 
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Indexing</h1>
-        <button
-          onClick={start}
-          disabled={starting || running}
-          className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
-          {running ? "Indexing…" : "Start Indexing"}
-        </button>
-      </div>
+      <h1 className="text-2xl font-semibold">Indexing</h1>
+      <p className="mt-1 text-sm text-slate-600">
+        Register a repo (a local folder or a Git URL), see its profile, then index it. Generated docs go to the output folder, never into
+        the repo.
+      </p>
 
       {error && <div className="mt-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800">{error}</div>}
 
-      {run && (
-        <p className="mt-3 text-sm text-slate-500">
-          Run #{run.id} · {run.status} · started {new Date(run.startedAt).toLocaleTimeString()}
-          {run.finishedAt && ` · finished ${new Date(run.finishedAt).toLocaleTimeString()}`}
-        </p>
-      )}
-
-      {run?.status === "done" && (
-        <div className="mt-4 rounded border border-green-300 bg-green-50 p-4 text-green-900">
-          Indexing complete. All repos are chunked, embedded, documented and mapped — head to the Query page to check retrieval.
+      <section className="mt-6 rounded-lg border bg-white p-4 shadow-sm">
+        <h2 className="font-medium">Register a repo</h2>
+        <div className="mt-3 flex flex-wrap items-end gap-3 text-sm">
+          <label className="flex flex-col gap-1">
+            Name
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="billing-service"
+              className="rounded border px-2 py-1"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            Source
+            <select
+              value={sourceType}
+              onChange={(e) => setSourceType(e.target.value as "path" | "url")}
+              className="rounded border px-2 py-1"
+            >
+              <option value="path">Local folder</option>
+              <option value="url">Git URL</option>
+            </select>
+          </label>
+          <label className="flex min-w-72 flex-1 flex-col gap-1">
+            {sourceType === "path" ? "Absolute path" : "Clone URL (https or ssh)"}
+            <input
+              value={sourceValue}
+              onChange={(e) => setSourceValue(e.target.value)}
+              placeholder={sourceType === "path" ? "/work/billing-service" : "https://github.com/org/billing-service.git"}
+              className="rounded border px-2 py-1"
+            />
+          </label>
+          <button
+            onClick={register}
+            disabled={busy || !name.trim() || !sourceValue.trim()}
+            className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            Register
+          </button>
         </div>
-      )}
-      {run?.status === "error" && (
-        <div className="mt-4 rounded border border-red-300 bg-red-50 p-4 text-red-900">
-          Indexing finished with errors — see the failed repos below and the server log.
-        </div>
-      )}
+      </section>
 
       <div className="mt-6 space-y-4">
-        {repos.map(([name, p]) => (
-          <section key={name} className="rounded-lg border bg-white p-4 shadow-sm">
-            <h2 className="font-medium">{name}</h2>
-            {p.error && <p className="mt-1 text-sm text-red-700">{p.error}</p>}
-            <ul className="mt-2">
-              {STEPS.filter((s) => name !== "(system)" || p.stages[s.key]).map((s) => (
-                <StepRow key={s.key} step={s} p={p} />
-              ))}
-              {name === "(system)" && p.stages.cross_repo_links && (
-                <li className="flex items-center gap-3 py-1 text-sm">
-                  <span className="w-4 text-center font-bold text-green-600">✓</span>
-                  <span className="w-44">Cross-repo links</span>
-                  <span className="text-slate-500">{p.stages.cross_repo_links.links} links</span>
-                </li>
+        {repos.length === 0 && <p className="text-sm text-slate-500">No repos yet. Register one above.</p>}
+        {repos.map((repo) => {
+          const run = runs.find((r) => r.repoId === repo.id);
+          const busyNow = repo.status === "profiling" || repo.status === "indexing";
+          return (
+            <section key={repo.id} className="rounded-lg border bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="font-medium">{repo.name}</h2>
+                <span className="font-mono text-xs text-slate-500">{repo.id}</span>
+                <span className={`rounded px-1.5 py-0.5 text-xs ${STATUS_STYLE[repo.status]}`}>{repo.status}</span>
+                {repo.indexedCommitSha && <span className="font-mono text-xs text-slate-500">@ {repo.indexedCommitSha.slice(0, 8)}</span>}
+                <div className="ml-auto flex items-center gap-2 text-sm">
+                  <select
+                    value={strategy[repo.id] ?? "auto"}
+                    onChange={(e) => setStrategy((s) => ({ ...s, [repo.id]: e.target.value as Strategy | "auto" }))}
+                    disabled={busyNow}
+                    className="rounded border px-2 py-1"
+                    title="Which pipeline to run"
+                  >
+                    <option value="auto">Recommended{repo.profile ? ` (${repo.profile.recommendation})` : ""}</option>
+                    <option value="full">Full (embeddings)</option>
+                    <option value="claude-md-only">CLAUDE.md only</option>
+                  </select>
+                  <button
+                    onClick={() => void index(repo)}
+                    disabled={busyNow}
+                    className="rounded bg-slate-900 px-3 py-1.5 text-white disabled:opacity-50"
+                  >
+                    {repo.status === "indexing" ? "Indexing…" : repo.indexedAt ? "Re-index" : "Index"}
+                  </button>
+                </div>
+              </div>
+              <p className="mt-1 break-all text-xs text-slate-500">
+                {repo.source.type === "url" ? "Git URL" : "Folder"}: {repo.source.value}
+              </p>
+              {repo.error && <p className="mt-2 text-sm text-red-700">{repo.error}</p>}
+              {repo.profile && (
+                <div className="mt-3 text-sm">
+                  <p>
+                    {repo.profile.totalFiles} files, {repo.profile.totalLoc.toLocaleString()} lines of code:{" "}
+                    {repo.profile.languages.map((l) => `${l.language} ${l.files} files / ${l.loc.toLocaleString()} lines`).join(" · ") ||
+                      "no source code"}
+                  </p>
+                  <p className="mt-1 text-slate-600">
+                    Recommended: <b>{repo.profile.recommendation}</b>. {repo.profile.reason}
+                  </p>
+                </div>
               )}
-            </ul>
-          </section>
-        ))}
-        {run && repos.length === 0 && <p className="text-sm text-slate-500">Waiting for the first progress event…</p>}
-        {!run && (
-          <p className="text-sm text-slate-500">
-            No runs yet. Fill in repos.config.json, then press Start Indexing. Generated docs go to output/ (or CONTEXT_OUTPUT_DIR), never
-            into the repo.
-          </p>
-        )}
+              {run && <Progress run={run} />}
+            </section>
+          );
+        })}
       </div>
     </div>
   );

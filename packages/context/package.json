@@ -9,7 +9,8 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
-    "test": "cross-env NODE_OPTIONS=--use-system-ca vitest run --pool=threads"
+    "test": "cross-env NODE_OPTIONS=--use-system-ca vitest run --pool=threads",
+    "repo:profile": "tsx scripts/profile.ts"
   },
   "dependencies": {
     "@sdd/contracts": "workspace:*",
@@ -26,7 +27,9 @@
     "@types/pg": "8.23.1",
     "cross-env": "10.1.0",
     "dotenv": "18.0.8",
+    "tsx": "4.23.15",
     "typescript": "5.9.3",
-    "vitest": "5.0.5"
+    "vitest": "5.0.5",
+    "zod": "4.6.7"
   }
 }

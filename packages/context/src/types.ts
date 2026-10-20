@@ -1,16 +1,11 @@
+import type { ContextBundle, RetrievalMode } from "@sdd/contracts";
+
 /** A repo checked out on disk, as the indexing pipeline sees it. `id` is the registry slug (Repo.id) and the key in every table. */
 export interface RepoTarget {
   id: string;
   name: string;
   /** Absolute path to the working tree. */
   path: string;
-}
-
-/** The prototype's hand-edited repos.config.json entry. Kept only until the repo registry replaces it. */
-export interface RepoConfig {
-  name: string;
-  path: string;
-  description: string;
 }
 
 export type ChunkType = "function" | "class" | "route" | "other";
@@ -58,3 +53,22 @@ export type ProgressStage =
 export type ProgressCounts = Record<string, number | string>;
 
 export type ProgressCallback = (repoId: string, stage: ProgressStage, counts: ProgressCounts) => void | Promise<void>;
+
+export interface ContextRequest {
+  /** The registered repo to ground the task in (Initiative.repoId). */
+  repoId: string;
+  /** The requirement or design question the context is for. */
+  task: string;
+  /** Retrieval strategy. Default: the provider's default ("hybrid"). */
+  mode?: RetrievalMode;
+  /** Upper bound on the bundle's size in estimated tokens. Default 12,000. */
+  budgetTokens?: number;
+}
+
+/**
+ * The seam between the workflow and the Context Agent. The orchestrator depends only on this interface:
+ * Case A gets a NullContextProvider (an empty bundle), Case B a RepoContextProvider.
+ */
+export interface ContextProvider {
+  getContext(request: ContextRequest): Promise<ContextBundle>;
+}

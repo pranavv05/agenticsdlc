@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-interface QueryChunk {
+type Mode = "claude-md" | "embeddings" | "hybrid";
+interface RepoItem {
+  id: string;
+  name: string;
+  status: string;
+  indexStrategy: string | null;
+}
+interface Chunk {
   repoId: string;
   filePath: string;
   symbolName: string | null;
@@ -14,16 +21,45 @@ interface QueryChunk {
   via: "similarity" | "dependency" | "lexical";
 }
 interface Bundle {
-  chunks: QueryChunk[];
+  mode: Mode | null;
+  chunks: Chunk[];
   relevantClaudeMdSections: { repoId: string; path: string; content: string }[];
   relevantMindmapExcerpt: string;
+  tokenEstimate: number;
+  truncated: boolean;
 }
 
+const MODES: { value: Mode; label: string; hint: string }[] = [
+  { value: "hybrid", label: "Hybrid", hint: "code search + embeddings, merged" },
+  { value: "claude-md", label: "CLAUDE.md", hint: "module docs + code search, no embeddings" },
+  { value: "embeddings", label: "Embeddings", hint: "vector similarity" },
+];
+
+const VIA_STYLE: Record<Chunk["via"], string> = {
+  similarity: "bg-blue-100 text-blue-800",
+  lexical: "bg-emerald-100 text-emerald-800",
+  dependency: "bg-purple-100 text-purple-800",
+};
+
 export default function QueryPage() {
+  const [repos, setRepos] = useState<RepoItem[]>([]);
+  const [repoId, setRepoId] = useState("");
+  const [mode, setMode] = useState<Mode>("hybrid");
+  const [budget, setBudget] = useState(12000);
   const [text, setText] = useState("");
   const [bundle, setBundle] = useState<Bundle | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/repos", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((json: { items: RepoItem[] }) => {
+        setRepos(json.items ?? []);
+        setRepoId((current) => current || json.items?.[0]?.id || "");
+      })
+      .catch((e: Error) => setError(e.message));
+  }, []);
 
   async function search() {
     setLoading(true);
@@ -32,10 +68,10 @@ export default function QueryPage() {
       const res = await fetch("/api/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ featureDescription: text, topK: 15 }),
+        body: JSON.stringify({ repoId, task: text, mode, budgetTokens: budget }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? res.statusText);
+      if (!res.ok) throw new Error(json.error?.message ?? res.statusText);
       setBundle(json);
     } catch (e) {
       setError((e as Error).message);
@@ -48,7 +84,49 @@ export default function QueryPage() {
   return (
     <div>
       <h1 className="text-2xl font-semibold">Query</h1>
-      <p className="mt-1 text-sm text-slate-600">Describe a feature; see what context retrieval returns.</p>
+      <p className="mt-1 text-sm text-slate-600">Describe a feature; see what context retrieval returns for it.</p>
+
+      <div className="mt-4 flex flex-wrap items-end gap-4 text-sm">
+        <label className="flex flex-col gap-1">
+          Repo
+          <select value={repoId} onChange={(e) => setRepoId(e.target.value)} className="rounded border px-2 py-1">
+            {repos.length === 0 && <option value="">(no repos indexed yet)</option>}
+            {repos.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name} ({r.status}
+                {r.indexStrategy ? `, ${r.indexStrategy}` : ""})
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          Mode
+          <select
+            value={mode}
+            onChange={(e) => setMode(e.target.value as Mode)}
+            className="rounded border px-2 py-1"
+            title={MODES.find((m) => m.value === mode)?.hint}
+          >
+            {MODES.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          Budget (tokens)
+          <input
+            type="number"
+            min={100}
+            step={500}
+            value={budget}
+            onChange={(e) => setBudget(Number(e.target.value))}
+            className="w-28 rounded border px-2 py-1"
+          />
+        </label>
+      </div>
+
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -58,7 +136,7 @@ export default function QueryPage() {
       />
       <button
         onClick={search}
-        disabled={loading || !text.trim()}
+        disabled={loading || !text.trim() || !repoId}
         className="mt-2 rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
         {loading ? "Searching…" : "Search"}
@@ -68,11 +146,15 @@ export default function QueryPage() {
 
       {bundle && (
         <div className="mt-8 space-y-8">
+          <p className="text-sm text-slate-600">
+            Mode used: <b>{bundle.mode}</b> · about {bundle.tokenEstimate} tokens of {budget}
+            {bundle.truncated && <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-amber-800">cut to fit the budget</span>}
+          </p>
           <section>
             <h2 className="mb-3 text-lg font-medium">Chunks ({bundle.chunks.length})</h2>
             <div className="space-y-3">
               {bundle.chunks.map((c) => (
-                <article key={`${c.repoId}:${c.filePath}:${c.startLine}`} className="rounded-lg border bg-white shadow-sm">
+                <article key={`${c.repoId}:${c.filePath}:${c.startLine}:${c.via}`} className="rounded-lg border bg-white shadow-sm">
                   <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2 text-xs">
                     <span className="rounded bg-slate-100 px-1.5 py-0.5">{c.repoId}</span>
                     <span className="font-mono">
@@ -81,10 +163,8 @@ export default function QueryPage() {
                     <span className="text-slate-500">
                       {c.chunkType} {c.symbolName}
                     </span>
-                    <span
-                      className={`ml-auto rounded px-1.5 py-0.5 ${c.via === "similarity" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"}`}
-                    >
-                      {c.via === "similarity" ? `score ${c.score?.toFixed(3)}` : "via dependency"}
+                    <span className={`ml-auto rounded px-1.5 py-0.5 ${VIA_STYLE[c.via]}`}>
+                      {c.via === "similarity" ? `score ${c.score?.toFixed(3)}` : c.via === "lexical" ? "keyword match" : "via dependency"}
                     </span>
                   </header>
                   <pre className="max-h-60 overflow-auto p-3 text-xs">{c.code.split("\n").slice(0, 25).join("\n")}</pre>
@@ -113,7 +193,7 @@ export default function QueryPage() {
             {bundle.relevantMindmapExcerpt ? (
               <pre className="whitespace-pre-wrap rounded border bg-white p-3 text-xs">{bundle.relevantMindmapExcerpt}</pre>
             ) : (
-              <p className="text-sm text-slate-500">No mindmap files found in output/.</p>
+              <p className="text-sm text-slate-500">No mindmap files found in the output folder.</p>
             )}
           </section>
         </div>

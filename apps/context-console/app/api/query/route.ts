@@ -1,19 +1,28 @@
+import { RETRIEVAL_MODES, RepoIdSchema } from "@sdd/contracts";
 import { NextResponse } from "next/server";
-import { getContextStore, queryContext } from "@sdd/context";
+import { z } from "zod";
+import { RepoContextProvider, getContextStore } from "@sdd/context";
+import { readJson, toErrorResponse } from "../../../lib/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const g = globalThis as unknown as { __contextProvider?: RepoContextProvider };
+
+/** Console only (not part of docs/API.md): what context would the agents get for this task? */
+const QuerySchema = z.object({
+  repoId: RepoIdSchema,
+  task: z.string().trim().min(1).max(20_000),
+  mode: z.enum(RETRIEVAL_MODES).optional(),
+  budgetTokens: z.number().int().min(1).max(200_000).optional(),
+});
+
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => ({}))) as { featureDescription?: string; topK?: number };
-  if (!body.featureDescription?.trim()) {
-    return NextResponse.json({ error: "featureDescription is required" }, { status: 400 });
-  }
-  const topK = Math.min(Math.max(Number(body.topK) || 15, 1), 50);
   try {
-    return NextResponse.json(await queryContext(body.featureDescription, { store: getContextStore(), topK }));
+    const query = QuerySchema.parse(await readJson(req));
+    g.__contextProvider ??= new RepoContextProvider({ store: getContextStore() });
+    return NextResponse.json(await g.__contextProvider.getContext(query));
   } catch (err) {
-    console.error("[query] failed:", err);
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+    return toErrorResponse(err);
   }
 }
