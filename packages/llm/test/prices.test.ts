@@ -55,8 +55,6 @@ describe("computeCostUsd", () => {
 describe("normalizeModelId", () => {
   it.each([
     ["claude-sonnet-5-5", "claude-sonnet-5-5"],
-    ["anthropic.claude-sonnet-5-5", "claude-sonnet-5-5"],
-    ["us.anthropic.claude-sonnet-5-5-v1:0", "claude-sonnet-5-5"],
     ["claude-haiku-4-5-20251001", "claude-haiku-4-5"],
     ["claude-opus-5", "claude-opus-5"],
     ["CLAUDE-OPUS-5-5", "claude-opus-5-5"],

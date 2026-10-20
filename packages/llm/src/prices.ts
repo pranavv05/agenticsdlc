@@ -51,8 +51,8 @@ export const EMBEDDING_PRICES: Readonly<Record<string, number>> = {
 };
 
 /**
- * Maps any provider spelling of a model id to the key used in MODEL_PRICES:
- * "claude-sonnet-5-5", "anthropic.claude-sonnet-5-5", "us.anthropic.claude-sonnet-5-5-v1:0", "claude-haiku-4-5-20251001".
+ * Maps a model id to the key used in MODEL_PRICES, so dated and aliased spellings are priced like the base model:
+ * "claude-sonnet-5-5", "claude-haiku-4-5-20251001", "claude-sonnet-5@20260101".
  */
 export function normalizeModelId(model: string): string {
   const match = /claude-(?:opus|sonnet|haiku|fable|mythos)-\d+(?:-\d{1,2})?(?!\d)/i.exec(model);

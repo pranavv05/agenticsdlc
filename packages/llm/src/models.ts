@@ -1,4 +1,3 @@
-import { LlmConfigError } from "./errors";
 import { normalizeModelId } from "./prices";
 
 /** Used when NODE_ENV is "production" and nothing else is configured. */
@@ -27,23 +26,15 @@ export function supportsForcedToolChoice(model: string): boolean {
 export interface ModelEnv {
   LLM_MODEL?: string;
   /** Legacy names from the prototype; still honoured. */
-  SDD_MODEL?: string;
-  CLAUDE_MODEL?: string;
   NODE_ENV?: string;
 }
 
 /**
- * Picks the model for a call: the call's own `model`, else LLM_MODEL (SDD_MODEL / CLAUDE_MODEL for compatibility),
+ * Picks the model for a call: the call's own `model`, else LLM_MODEL,
  * else DEFAULT_MODEL in production and the cheaper DEV_MODEL everywhere else.
  */
-export function resolveModel(
-  requested: string | undefined,
-  env: ModelEnv = process.env,
-  provider: "anthropic" | "bedrock" = "anthropic",
-): string {
-  const configured = requested?.trim() || env.LLM_MODEL?.trim() || env.SDD_MODEL?.trim() || env.CLAUDE_MODEL?.trim();
+export function resolveModel(requested: string | undefined, env: ModelEnv = process.env): string {
+  const configured = requested?.trim() || env.LLM_MODEL?.trim();
   if (configured) return configured;
-  // Bedrock model ids and inference profiles differ per account and region, so there is no safe default.
-  if (provider === "bedrock") throw new LlmConfigError("LLM_MODEL (a Bedrock model or inference-profile id) is not set");
   return env.NODE_ENV === "production" ? DEFAULT_MODEL : DEV_MODEL;
 }

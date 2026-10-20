@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { LlmConfigError, TransportError, isRetryableStatus, parseRetryAfter } from "./errors";
+import { TransportError, isRetryableStatus, parseRetryAfter } from "./errors";
 
 export type Effort = "low" | "medium" | "high" | "xhigh" | "max";
 
@@ -29,13 +29,13 @@ export interface LlmResponse {
   usage: { inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number };
 }
 
-/** One HTTP call to one provider. No retries here: the gateway owns retry, backoff and timeouts. */
+/** One HTTP call to the model API. No retries here: the gateway owns retry, backoff and timeouts. */
 export interface Transport {
   readonly name: string;
   send(request: LlmRequest): Promise<LlmResponse>;
 }
 
-// ---- shared parsing of a Messages API body (the Anthropic SDK and Bedrock return the same shape) ----
+// ---- shared parsing of a Messages API body (what the Anthropic SDK returns) ----
 
 interface MessagesBody {
   model?: string;
@@ -72,7 +72,7 @@ export function parseMessagesBody(body: MessagesBody, request: LlmRequest): LlmR
   };
 }
 
-/** Body fields shared by the Anthropic SDK call and the Bedrock invoke call. */
+/** The Messages API request fields built from a neutral request. */
 function messagesParams(request: LlmRequest) {
   return {
     max_tokens: request.maxTokens,
@@ -132,45 +132,4 @@ function toTransportError(error: unknown): TransportError {
   // Connection resets, DNS failures, aborts: no HTTP status, worth another try.
   const message = error instanceof Error ? error.message : String(error);
   return new TransportError(message, undefined, true, undefined, { cause: error });
-}
-
-// ---- Amazon Bedrock (bearer-token invoke endpoint, as in the prototype) ----
-
-export interface BedrockOptions {
-  apiKey: string;
-  region: string;
-  fetch?: typeof fetch;
-}
-
-export function createBedrockTransport(options: BedrockOptions): Transport {
-  if (!options.apiKey) throw new LlmConfigError("BEDROCK_API_KEY is not set");
-  if (!options.region) throw new LlmConfigError("AWS_REGION is not set");
-  const doFetch = options.fetch ?? fetch;
-  return {
-    name: "bedrock",
-    async send(request) {
-      const url = `https://bedrock-runtime.${options.region}.amazonaws.com/model/${encodeURIComponent(request.model)}/invoke`;
-      let res: Response;
-      try {
-        res = await doFetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: `Bearer ${options.apiKey}` },
-          body: JSON.stringify({ anthropic_version: "bedrock-2023-05-31", ...messagesParams(request) }),
-          signal: request.signal,
-        });
-      } catch (error) {
-        throw new TransportError(error instanceof Error ? error.message : String(error), undefined, true, undefined, { cause: error });
-      }
-      if (!res.ok) {
-        const detail = (await res.text().catch(() => "")).slice(0, 500);
-        throw new TransportError(
-          `Bedrock invoke failed (${request.model}): ${res.status} ${detail}`,
-          res.status,
-          isRetryableStatus(res.status),
-          parseRetryAfter(res.headers.get("retry-after")),
-        );
-      }
-      return parseMessagesBody((await res.json()) as MessagesBody, request);
-    },
-  };
 }
