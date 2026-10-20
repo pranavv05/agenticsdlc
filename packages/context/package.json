@@ -12,7 +12,7 @@
     "test": "cross-env NODE_OPTIONS=--use-system-ca vitest run --pool=threads"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.134.0",
+    "@sdd/llm": "workspace:*",
     "ignore": "7.0.12",
     "pg": "8.23.1",
     "simple-git": "4.0.2",

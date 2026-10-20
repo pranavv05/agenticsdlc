@@ -9,7 +9,7 @@ import { clearRepo, insertChunks, insertDependencies, replaceCrossRepoLinks } fr
 import { loadRepoConfig, defaultOutputDir } from "./config";
 import { isSourceFile } from "./parse";
 import { walkRepo, type WalkedFile } from "./walk";
-import { pMap } from "./llm";
+import { pMap } from "./concurrency";
 import { log, logHeader } from "./log";
 import type {
   ChunkRecord,
