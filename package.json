@@ -1,0 +1,38 @@
+{
+  "name": "sdd-poc",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS=--use-system-ca next dev",
+    "build": "next build",
+    "start": "cross-env NODE_OPTIONS=--use-system-ca next start",
+    "typecheck": "tsc --noEmit",
+    "test": "cross-env NODE_OPTIONS=--use-system-ca vitest run --pool=threads"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.134.0",
+    "ignore": "^7.0.12",
+    "next": "^14.2.35",
+    "pg": "^8.23.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "simple-git": "^4.0.2",
+    "tree-sitter-java": "^0.23.5",
+    "tree-sitter-python": "^0.25.0",
+    "tree-sitter-typescript": "^0.23.2",
+    "web-tree-sitter": "^0.27.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "autoprefixer": "^10.6.1",
+    "cross-env": "^10.1.0",
+    "dotenv": "^18.0.8",
+    "postcss": "^8.5.30",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.4"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "sample-repo",
+  "private": true,
+  "scripts": { "test": "vitest run", "lint": "eslint ." }
+}

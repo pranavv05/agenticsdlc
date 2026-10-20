@@ -1,0 +1,12 @@
+[
+  {
+    "name": "REPLACE-ME-repo-one",
+    "path": "C:/path/to/your/first/repo",
+    "description": "Placeholder. TODO: fill in your real 4-5 repos (name, absolute path, one-line description) before running indexing. JSON has no comments, so this entry doubles as the note."
+  },
+  {
+    "name": "REPLACE-ME-repo-two",
+    "path": "C:/path/to/your/second/repo",
+    "description": "Placeholder. Delete or replace both entries; keep the array format."
+  }
+]
