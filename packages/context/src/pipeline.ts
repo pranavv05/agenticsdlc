@@ -60,7 +60,7 @@ export async function indexAllRepos(onProgress: ProgressCallback, opts: IndexOpt
     } catch (err) {
       const msg = `Repo "${r.name}": path "${r.path}" is not usable (${(err as Error).message}). Edit repos.config.json.`;
       await emit(r.name, "error", { message: msg });
-      throw new Error(msg);
+      throw new Error(msg, { cause: err });
     }
   }
 

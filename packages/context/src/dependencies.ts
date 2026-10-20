@@ -40,7 +40,7 @@ function tsSpecifiers(root: Node): string[] {
   return specs;
 }
 
-function resolvePythonModule(from: string, dotted: string, files: Set<string>): string[] {
+function resolvePythonModule(from: string, dotted: string): string[] {
   // returns candidate base paths (without extension) for a possibly-relative dotted module
   let base: string[];
   const m = /^(\.*)(.*)$/.exec(dotted)!;
@@ -70,7 +70,7 @@ function pySpecifiers(root: Node, from: string, files: Set<string>): string[] {
       for (const c of n.namedChildren) {
         const dotted = c.type === "aliased_import" ? c.childForFieldName("name")?.text : c.type === "dotted_name" ? c.text : null;
         if (!dotted) continue;
-        for (const b of resolvePythonModule(from, dotted, files)) {
+        for (const b of resolvePythonModule(from, dotted)) {
           const hit = pyFileFor(b, files);
           if (hit) out.push(hit);
         }
@@ -78,7 +78,7 @@ function pySpecifiers(root: Node, from: string, files: Set<string>): string[] {
     } else {
       const mod = n.childForFieldName("module_name")?.text;
       if (!mod) continue;
-      const bases = resolvePythonModule(from, mod, files);
+      const bases = resolvePythonModule(from, mod);
       const names = n.childrenForFieldName("name").map((c) => (c.type === "aliased_import" ? c.childForFieldName("name")?.text : c.text)).filter(Boolean) as string[];
       for (const b of bases) {
         const hit = pyFileFor(b, files);
@@ -143,7 +143,7 @@ export async function extractDependencies(repoPath: string, repoName: string, wa
     if (f.size > 500_000) continue;
     const lang = langForFile(f.rel)!;
     const code = await fs.readFile(f.abs, "utf8");
-    let targets: string[] = [];
+    let targets: string[];
     try {
       targets = await withTree(code, lang, (root) => {
         if (lang === "python") return pySpecifiers(root, f.rel, fileSet);

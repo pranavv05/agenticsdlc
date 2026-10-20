@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { getPool } from "../db";
+import { getPool } from "./db";
 import { embedTexts } from "./embed";
 import { defaultOutputDir, loadRepoConfig, safeName } from "./config";
 import { GENERATED_CLAUDE_MD } from "./walk";

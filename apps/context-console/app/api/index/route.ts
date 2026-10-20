@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPool } from "../../../lib/db";
-import { indexAllRepos } from "../../../lib/context-agent/pipeline";
-import type { ProgressCounts, ProgressStage } from "../../../lib/context-agent/types";
+import { getPool, indexAllRepos, type ProgressCounts, type ProgressStage } from "@sdd/context";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

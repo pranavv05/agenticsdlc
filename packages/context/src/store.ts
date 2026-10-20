@@ -1,4 +1,4 @@
-import { getPool } from "../db";
+import { getPool } from "./db";
 import type { ChunkRecord, CrossRepoLink, DependencyEdge } from "./types";
 
 const INSERT_BATCH = 200;

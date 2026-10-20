@@ -4,8 +4,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-dotenv.config({ path: ".env.local" });
-dotenv.config({ path: ".env" });
+const ROOT = path.resolve(import.meta.dirname, "../../..");
+dotenv.config({ path: path.join(ROOT, ".env.local") });
+dotenv.config({ path: path.join(ROOT, ".env") });
 
 const haveLlm = process.env.LLM_PROVIDER === "bedrock" ? !!process.env.BEDROCK_API_KEY : !!process.env.ANTHROPIC_API_KEY;
 const haveKeys = !!(haveLlm && process.env.VOYAGE_API_KEY && process.env.DATABASE_URL);
@@ -23,15 +24,15 @@ describe.skipIf(!haveKeys)("indexAllRepos on the fixture repo", () => {
     tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sdd-fixture-"));
     repoPath = path.join(tmp, "sample-repo");
     outputDir = path.join(tmp, "output");
-    fs.cpSync(path.join(process.cwd(), "test/fixtures/sample-repo"), repoPath, { recursive: true });
+    fs.cpSync(path.join(import.meta.dirname, "fixtures/sample-repo"), repoPath, { recursive: true });
 
-    const { indexAllRepos } = await import("../lib/context-agent/pipeline");
+    const { indexAllRepos } = await import("../src/pipeline");
     const result = await indexAllRepos(() => {}, { repos: repos(), outputDir });
     expect(result.failedRepos).toEqual([]);
   });
 
   afterAll(async () => {
-    const { getPool, closePool } = await import("../lib/db");
+    const { getPool, closePool } = await import("../src/db");
     if (haveKeys) {
       await getPool().query("DELETE FROM chunks WHERE repo_name = $1", [REPO_NAME]);
       await getPool().query("DELETE FROM dependencies WHERE repo_name = $1", [REPO_NAME]);
@@ -41,7 +42,7 @@ describe.skipIf(!haveKeys)("indexAllRepos on the fixture repo", () => {
   });
 
   it("creates chunks for both modules", async () => {
-    const { getPool } = await import("../lib/db");
+    const { getPool } = await import("../src/db");
     const { rows } = await getPool().query("SELECT file_path FROM chunks WHERE repo_name = $1", [REPO_NAME]);
     expect(rows.some((r) => r.file_path.includes("auth/"))).toBe(true);
     expect(rows.some((r) => r.file_path.includes("billing/"))).toBe(true);
@@ -60,7 +61,7 @@ describe.skipIf(!haveKeys)("indexAllRepos on the fixture repo", () => {
   });
 
   it("returns billing chunks, not auth, for a billing query", async () => {
-    const { queryContext } = await import("../lib/context-agent/query");
+    const { queryContext } = await import("../src/query");
     const bundle = await queryContext("charge a customer's card and refund part of an invoice payment", 6, {
       repos: repos(),
       outputDir,

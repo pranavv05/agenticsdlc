@@ -1,0 +1,32 @@
+{
+  "name": "@sdd/context",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Context Agent library: chunking, embeddings, dependency graph, CLAUDE.md and mindmap generation, query.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "cross-env NODE_OPTIONS=--use-system-ca vitest run --pool=threads"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.134.0",
+    "ignore": "7.0.12",
+    "pg": "8.23.1",
+    "simple-git": "4.0.2",
+    "tree-sitter-java": "0.23.5",
+    "tree-sitter-python": "0.25.0",
+    "tree-sitter-typescript": "0.23.2",
+    "web-tree-sitter": "0.27.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "@types/pg": "8.23.1",
+    "cross-env": "10.1.0",
+    "dotenv": "18.0.8",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  }
+}

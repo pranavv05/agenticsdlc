@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import path from "node:path";
 import { Parser, Language, type Node } from "web-tree-sitter";
 
@@ -26,6 +27,8 @@ export function isSourceFile(rel: string): boolean {
   return langForFile(rel) !== null;
 }
 
+const require = createRequire(import.meta.url);
+
 let initPromise: Promise<void> | null = null;
 const languages = new Map<LangId, Promise<Language>>();
 
@@ -33,7 +36,7 @@ function loadLanguage(id: LangId): Promise<Language> {
   let p = languages.get(id);
   if (!p) {
     const [pkg, file] = WASM[id];
-    p = Language.load(path.join(process.cwd(), "node_modules", pkg, file));
+    p = Language.load(path.join(path.dirname(require.resolve(`${pkg}/package.json`)), file));
     languages.set(id, p);
   }
   return p;

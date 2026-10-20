@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { queryContext } from "../../../lib/context-agent/query";
+import { queryContext } from "@sdd/context";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

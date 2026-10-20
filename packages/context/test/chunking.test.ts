@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import path from "node:path";
-import { chunkRepo } from "../lib/context-agent/chunk";
-import { extractDependencies } from "../lib/context-agent/dependencies";
-import { detectModules } from "../lib/context-agent/claudeMd";
+import { chunkRepo } from "../src/chunk";
+import { extractDependencies } from "../src/dependencies";
+import { detectModules } from "../src/claudeMd";
 
-const FIXTURE = path.join(process.cwd(), "test/fixtures/sample-repo");
+const FIXTURE = path.join(import.meta.dirname, "fixtures/sample-repo");
 
 // Needs no API keys or database: exercises tree-sitter chunking, import resolution and module detection.
 describe("static analysis on the fixture repo", () => {
@@ -35,7 +35,7 @@ describe("static analysis on the fixture repo", () => {
 });
 
 describe("java support", () => {
-  const JAVA = path.join(process.cwd(), "test/fixtures/java-sample");
+  const JAVA = path.join(import.meta.dirname, "fixtures/java-sample");
 
   it("chunks classes, methods and Spring routes", async () => {
     const chunks = await chunkRepo(JAVA, "java");
