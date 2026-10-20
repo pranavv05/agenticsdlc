@@ -13,12 +13,17 @@ type Run = {
 };
 
 const STEPS: { key: string; label: string; detail: (c: Counts) => string }[] = [
+  { key: "plan", label: "Plan", detail: (c) => `${c.kind}: ${c.reason}` },
   { key: "files", label: "Files found", detail: (c) => `${c.source} source / ${c.total} total` },
   { key: "chunks", label: "Chunks created", detail: (c) => `${c.chunks} chunks in ${c.files} files` },
-  { key: "embeddings", label: "Embeddings done", detail: (c) => `${c.done}/${c.total}` },
+  { key: "embeddings", label: "Embeddings done", detail: (c) => `${c.done}/${c.total}${c.reused ? ` (${c.reused} chunks reused)` : ""}` },
   { key: "dependencies", label: "Dependencies", detail: (c) => `${c.edges} import edges` },
-  { key: "claude_md", label: "CLAUDE.md generated", detail: (c) => `${c.written ?? 0}/${c.modules} modules${c.root ? " + root" : ""}` },
-  { key: "mindmap", label: "Mindmap generated", detail: () => "written to output/" },
+  {
+    key: "claude_md",
+    label: "CLAUDE.md generated",
+    detail: (c) => `${c.written ?? 0}/${c.rewriting ?? c.modules} module docs${c.root ? " + root" : ""}`,
+  },
+  { key: "mindmap", label: "Mindmap generated", detail: (c) => (c.diagrams ? "written to output/" : "unchanged") },
 ];
 
 function StepRow({ step, p }: { step: (typeof STEPS)[number]; p: RepoProgress }) {
@@ -140,7 +145,12 @@ export default function IndexPage() {
           </section>
         ))}
         {run && repos.length === 0 && <p className="text-sm text-slate-500">Waiting for the first progress event…</p>}
-        {!run && <p className="text-sm text-slate-500">No runs yet. Fill in repos.config.json, then press Start Indexing.</p>}
+        {!run && (
+          <p className="text-sm text-slate-500">
+            No runs yet. Fill in repos.config.json, then press Start Indexing. Generated docs go to output/ (or CONTEXT_OUTPUT_DIR), never
+            into the repo.
+          </p>
+        )}
       </div>
     </div>
   );

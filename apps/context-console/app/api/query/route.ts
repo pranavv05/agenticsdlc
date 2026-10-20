@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { queryContext } from "@sdd/context";
+import { getContextStore, queryContext } from "@sdd/context";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   }
   const topK = Math.min(Math.max(Number(body.topK) || 15, 1), 50);
   try {
-    return NextResponse.json(await queryContext(body.featureDescription, topK));
+    return NextResponse.json(await queryContext(body.featureDescription, { store: getContextStore(), topK }));
   } catch (err) {
     console.error("[query] failed:", err);
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
