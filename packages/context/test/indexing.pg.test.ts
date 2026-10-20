@@ -3,7 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { indexRepo, type IndexOptions } from "../src/pipeline";
-import { queryContext } from "../src/query";
+import { RepoContextProvider } from "../src/provider";
+import { RETRIEVAL_MODES } from "@sdd/contracts";
 import { installMockLlm, type MockLlm } from "./helpers/llm";
 import { createIsolatedPg, hasDatabase, type IsolatedPg } from "./helpers/pg";
 import { commitAll, copyFixture, head, rmrf, tmpDir, write } from "./helpers/repos";
@@ -57,21 +58,26 @@ describe.skipIf(!hasDatabase)("indexing a repo into Postgres", () => {
     expect(runs).toEqual([{ status: "done", mode: "full", commit_sha: head(repoDir) }]);
   });
 
-  it("retrieves billing code, not auth code, for a billing task (pgvector search + dependency hop + docs)", async () => {
-    await run();
-    const bundle = await queryContext("charge a customer's card and refund part of an invoice payment", {
-      store: pg.store,
-      outputRoot,
-      repoIds: ["sample-repo"],
-      topK: 6,
-    });
-    const similar = bundle.chunks.filter((c) => c.via === "similarity");
-    expect(similar.length).toBeGreaterThan(0);
-    expect(similar[0].filePath).toContain("billing/");
-    expect(similar.slice(0, 3).every((c) => c.filePath.includes("billing/"))).toBe(true);
-    expect(bundle.relevantClaudeMdSections.some((s) => s.path.startsWith("modules/billing/"))).toBe(true);
-    expect(bundle.relevantMindmapExcerpt).toContain("mermaid");
-  });
+  it.each(RETRIEVAL_MODES)(
+    "retrieves billing code, not auth code, for a billing task in %s mode (pgvector + dependency hop + docs)",
+    async (mode) => {
+      await run();
+      const provider = new RepoContextProvider({ store: pg.store, outputRoot, topK: 6 });
+      const bundle = await provider.getContext({
+        repoId: "sample-repo",
+        task: "charge a customer's card and refund part of an invoice payment",
+        mode,
+      });
+      const primary = bundle.chunks.filter((c) => c.via !== "dependency");
+      expect(bundle.mode).toBe(mode);
+      expect(primary.length).toBeGreaterThan(0);
+      expect(primary[0].filePath).toContain("billing/");
+      expect(primary.slice(0, 3).every((c) => c.filePath.includes("billing/"))).toBe(true);
+      expect(bundle.relevantClaudeMdSections.some((s) => s.path.startsWith("modules/billing/"))).toBe(true);
+      expect(bundle.relevantMindmapExcerpt).toContain("mermaid");
+      if (mode !== "claude-md") expect(primary.some((c) => c.via === "similarity" && typeof c.score === "number")).toBe(true);
+    },
+  );
 
   it("patches the index in Postgres: only the changed file's chunks are replaced", async () => {
     await run();

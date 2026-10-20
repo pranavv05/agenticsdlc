@@ -1,7 +1,8 @@
 export { indexRepo, indexRepos, SYSTEM_KEY } from "./pipeline";
 export type { IndexOptions, IndexResult } from "./pipeline";
-export { queryContext } from "./query";
-export type { QueryOptions } from "./query";
+export { ContextError, NullContextProvider, RepoContextProvider } from "./provider";
+export type { ContextErrorCode, RepoContextProviderOptions } from "./provider";
+export { DEFAULT_BUDGET_TOKENS, assembleBundle, estimateTokens } from "./retrieval/budget";
 export { getContextStore, setContextStore, MemoryContextStore, PgContextStore, EMBEDDING_DIMENSIONS } from "./store";
 export type * from "./store/types";
 export { closePool, getPool } from "./db";

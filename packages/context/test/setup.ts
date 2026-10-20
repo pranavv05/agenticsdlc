@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -9,3 +10,6 @@ if (!process.env.DATABASE_URL && fs.existsSync(envFile)) {
   const url = dotenv.parse(fs.readFileSync(envFile))["DATABASE_URL"];
   if (url) process.env.DATABASE_URL = url;
 }
+
+// The pipeline logs every stage; keep test output readable. Set SDD_TEST_LOGS=1 to see it.
+if (!process.env.SDD_TEST_LOGS) vi.spyOn(console, "log").mockImplementation(() => {});

@@ -53,6 +53,22 @@ The Postgres tests (`packages/context/test/store.test.ts`, `indexing.pg.test.ts`
 ## Context Agent notes
 
 - Generated docs and mind maps go to `output/` (or `CONTEXT_OUTPUT_DIR`), never into the target repo: `output/<repoId>/docs/<module>/CLAUDE.md.generated.md`, `output/<repoId>/mindmap.md`, `output/system.md`. They can be copied into a repo on request and an existing `CLAUDE.md` is never touched.
+- Getting context for a task (the seam the orchestrator uses):
+
+  ```ts
+  import { RepoContextProvider, NullContextProvider, getContextStore } from "@sdd/context";
+
+  const provider = new RepoContextProvider({ store: getContextStore() }); // Case B; Case A uses new NullContextProvider()
+  const bundle = await provider.getContext({
+    repoId: "billing-service",
+    task: "refund a partially paid invoice",
+    mode: "hybrid",
+    budgetTokens: 8000,
+  });
+  ```
+
+  `mode` is `claude-md` (module docs + code search, no embeddings), `embeddings` or `hybrid`; the bundle never exceeds `budgetTokens`. The console's Query page lets you try all three.
+
 - Re-indexing is incremental: only files changed since the last indexed commit are re-embedded. Schema notes for the migrations are in [`docs/CONTEXT-SCHEMA.md`](docs/CONTEXT-SCHEMA.md).
 - Supported languages: TypeScript/JavaScript (including TSX/JSX), Python and Java. Add grammars in `packages/context/src/parse.ts`.
 - Optional env: `LLM_MODEL` (default `claude-haiku-5-5` in development, `claude-sonnet-5-5` in production), `MAX_MODULES_PER_REPO` (default 25).
