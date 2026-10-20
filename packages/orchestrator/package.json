@@ -1,0 +1,17 @@
+{
+  "name": "@sdd/orchestrator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Mastra workflow and REST API.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "typescript": "5.9.3"
+  }
+}
