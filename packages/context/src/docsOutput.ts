@@ -93,6 +93,27 @@ export class DocsOutput {
     }
   }
 
+  /** Repo-relative paths of every generated CLAUDE.md under the repo's docs folder (the root one is `CLAUDE.md.generated.md`), sorted. */
+  async listDocs(repoId: string): Promise<string[]> {
+    const root = this.docsDir(repoId);
+    const found: string[] = [];
+    const visit = async (dir: string, rel: string): Promise<void> => {
+      let entries;
+      try {
+        entries = await fs.readdir(dir, { withFileTypes: true });
+      } catch {
+        return;
+      }
+      for (const e of entries) {
+        const childRel = rel ? `${rel}/${e.name}` : e.name;
+        if (e.isDirectory()) await visit(path.join(dir, e.name), childRel);
+        else if (e.isFile() && e.name === GENERATED_CLAUDE_MD) found.push(childRel);
+      }
+    };
+    await visit(root, "");
+    return found.sort();
+  }
+
   /** Writes `<base>.mmd` and `<base>.md` for a mind map. */
   async writeMindmap(base: string, title: string, mermaid: string, prose: string): Promise<void> {
     const dir = path.dirname(base);
