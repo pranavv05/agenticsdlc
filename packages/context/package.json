@@ -12,10 +12,10 @@
     "test": "cross-env NODE_OPTIONS=--use-system-ca vitest run --pool=threads"
   },
   "dependencies": {
+    "@sdd/contracts": "workspace:*",
     "@sdd/llm": "workspace:*",
     "ignore": "7.0.12",
     "pg": "8.23.1",
-    "simple-git": "4.0.2",
     "tree-sitter-java": "0.23.5",
     "tree-sitter-python": "0.25.0",
     "tree-sitter-typescript": "0.23.2",
