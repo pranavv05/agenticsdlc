@@ -164,7 +164,7 @@ function extractPython(root: Node): Raw[] {
  * tree-sitter and return function / class / route-level chunks.
  * Files that parse to no symbols become a single "other" chunk.
  */
-export async function chunkRepo(repoPath: string, repoName: string, files?: WalkedFile[]): Promise<ChunkRecord[]> {
+export async function chunkRepo(repoPath: string, repoId: string, files?: WalkedFile[]): Promise<ChunkRecord[]> {
   const all = files ?? (await walkRepo(repoPath));
   const chunks: ChunkRecord[] = [];
 
@@ -188,12 +188,12 @@ export async function chunkRepo(repoPath: string, repoName: string, files?: Walk
         }));
       });
     } catch (err) {
-      log(repoName, "chunks", `parse failed for ${f.rel} (${(err as Error).message}); using whole-file chunk`);
+      log(repoId, "chunks", `parse failed for ${f.rel} (${(err as Error).message}); using whole-file chunk`);
     }
 
     if (raws.length === 0) {
       chunks.push({
-        repoName,
+        repoId,
         filePath: f.rel,
         symbolName: path.basename(f.rel),
         chunkType: "other",
@@ -205,7 +205,7 @@ export async function chunkRepo(repoPath: string, repoName: string, files?: Walk
     }
     for (const r of raws) {
       chunks.push({
-        repoName,
+        repoId,
         filePath: f.rel,
         symbolName: r.name,
         chunkType: r.type,

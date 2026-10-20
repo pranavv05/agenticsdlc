@@ -48,11 +48,12 @@ pnpm dev:console         # http://localhost:3000 - open /indexing, then /query
 
 Database helpers: `pnpm db:down` (stop, keep data), `pnpm db:reset` (wipe and re-apply the schema), `pnpm db:psql` (open a psql shell).
 
-Integration tests (`packages/context/test/indexing.integration.test.ts`) run only when `DATABASE_URL`, `VOYAGE_API_KEY` and an LLM key are set.
+The Postgres tests (`packages/context/test/store.test.ts`, `indexing.pg.test.ts`) run in a private schema of the dev database and skip themselves when `DATABASE_URL` is not set; they need no API keys. After pulling a schema change run `pnpm db:reset`.
 
 ## Context Agent notes
 
-- Generated docs go to `<repo>/<module>/CLAUDE.md.generated.md`; an existing `CLAUDE.md` is never touched. Mindmaps go to `output/`.
+- Generated docs and mind maps go to `output/` (or `CONTEXT_OUTPUT_DIR`), never into the target repo: `output/<repoId>/docs/<module>/CLAUDE.md.generated.md`, `output/<repoId>/mindmap.md`, `output/system.md`. They can be copied into a repo on request and an existing `CLAUDE.md` is never touched.
+- Re-indexing is incremental: only files changed since the last indexed commit are re-embedded. Schema notes for the migrations are in [`docs/CONTEXT-SCHEMA.md`](docs/CONTEXT-SCHEMA.md).
 - Supported languages: TypeScript/JavaScript (including TSX/JSX), Python and Java. Add grammars in `packages/context/src/parse.ts`.
 - Optional env: `LLM_MODEL` (default `claude-haiku-5-5` in development, `claude-sonnet-5-5` in production), `MAX_MODULES_PER_REPO` (default 25).
 

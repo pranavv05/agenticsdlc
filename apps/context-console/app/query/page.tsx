@@ -3,8 +3,7 @@
 import { useState } from "react";
 
 interface QueryChunk {
-  id: number;
-  repoName: string;
+  repoId: string;
   filePath: string;
   symbolName: string | null;
   chunkType: string;
@@ -12,11 +11,11 @@ interface QueryChunk {
   startLine: number;
   endLine: number;
   score: number | null;
-  via: "similarity" | "dependency";
+  via: "similarity" | "dependency" | "lexical";
 }
 interface Bundle {
   chunks: QueryChunk[];
-  relevantClaudeMdSections: { repoName: string; path: string; content: string }[];
+  relevantClaudeMdSections: { repoId: string; path: string; content: string }[];
   relevantMindmapExcerpt: string;
 }
 
@@ -73,9 +72,9 @@ export default function QueryPage() {
             <h2 className="mb-3 text-lg font-medium">Chunks ({bundle.chunks.length})</h2>
             <div className="space-y-3">
               {bundle.chunks.map((c) => (
-                <article key={c.id} className="rounded-lg border bg-white shadow-sm">
+                <article key={`${c.repoId}:${c.filePath}:${c.startLine}`} className="rounded-lg border bg-white shadow-sm">
                   <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2 text-xs">
-                    <span className="rounded bg-slate-100 px-1.5 py-0.5">{c.repoName}</span>
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5">{c.repoId}</span>
                     <span className="font-mono">
                       {c.filePath}:{c.startLine}-{c.endLine}
                     </span>
@@ -100,9 +99,9 @@ export default function QueryPage() {
               <p className="text-sm text-slate-500">None found (has indexing generated CLAUDE.md.generated.md files?).</p>
             )}
             {bundle.relevantClaudeMdSections.map((s) => (
-              <details key={`${s.repoName}:${s.path}`} className="mb-2 rounded border bg-white p-3">
+              <details key={`${s.repoId}:${s.path}`} className="mb-2 rounded border bg-white p-3">
                 <summary className="cursor-pointer text-sm font-medium">
-                  {s.repoName} / {s.path}
+                  {s.repoId} / {s.path}
                 </summary>
                 <pre className="mt-2 whitespace-pre-wrap text-xs">{s.content}</pre>
               </details>

@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { CrossRepoLink, RepoConfig } from "./types";
+import type { CrossRepoLink, RepoTarget } from "./types";
 import { walkRepo, type WalkedFile } from "./walk";
 import { log } from "./log";
 
@@ -109,28 +109,29 @@ function nameRegex(name: string): RegExp {
  * For each repo, look in its code/config/compose/.env files for mentions of the other
  * configured repos' names or of service hostnames declared in their docker-compose files.
  */
-export async function detectCrossRepoLinks(repos: RepoConfig[]): Promise<CrossRepoLink[]> {
+export async function detectCrossRepoLinks(repos: RepoTarget[]): Promise<CrossRepoLink[]> {
   const walks = new Map<string, WalkedFile[]>();
-  for (const r of repos) walks.set(r.name, await walkRepo(r.path));
+  for (const r of repos) walks.set(r.id, await walkRepo(r.path));
 
   const hostsByRepo = new Map<string, Set<string>>();
   for (const r of repos) {
-    const hosts = await composeHostnames(walks.get(r.name)!);
+    const hosts = await composeHostnames(walks.get(r.id)!);
     const usable = new Set([...hosts].filter((h) => h.length >= 4 && !GENERIC_HOSTS.has(h)));
-    hostsByRepo.set(r.name, usable);
-    log(r.name, "cross_repo_links", `compose hostnames: ${usable.size ? [...usable].join(", ") : "(none)"}`);
+    hostsByRepo.set(r.id, usable);
+    log(r.id, "cross_repo_links", `compose hostnames: ${usable.size ? [...usable].join(", ") : "(none)"}`);
   }
 
   const links: CrossRepoLink[] = [];
   for (const from of repos) {
-    const files = walks.get(from.name)!.filter((f) => isScannable(f.rel) && f.size <= MAX_SCAN_BYTES);
+    const files = walks.get(from.id)!.filter((f) => isScannable(f.rel) && f.size <= MAX_SCAN_BYTES);
     const contents = new Map<string, string[]>();
     for (const f of files) contents.set(f.rel, (await fs.readFile(f.abs, "utf8")).split(/\r?\n/));
 
     for (const to of repos) {
-      if (to.name === from.name) continue;
+      if (to.id === from.id) continue;
       const matchers: { label: string; re: RegExp }[] = [{ label: `repo name "${to.name}"`, re: nameRegex(to.name) }];
-      for (const h of hostsByRepo.get(to.name) ?? []) matchers.push({ label: `service host "${h}"`, re: nameRegex(h) });
+      if (to.id !== to.name) matchers.push({ label: `repo id "${to.id}"`, re: nameRegex(to.id) });
+      for (const h of hostsByRepo.get(to.id) ?? []) matchers.push({ label: `service host "${h}"`, re: nameRegex(h) });
 
       const evidence: string[] = [];
       outer: for (const [rel, lines] of contents) {
@@ -142,8 +143,8 @@ export async function detectCrossRepoLinks(repos: RepoConfig[]): Promise<CrossRe
         }
       }
       if (evidence.length) {
-        links.push({ fromRepo: from.name, toRepo: to.name, evidence });
-        log(from.name, "cross_repo_links", `-> ${to.name}: ${evidence.length} evidence line(s)`);
+        links.push({ fromRepo: from.id, toRepo: to.id, evidence });
+        log(from.id, "cross_repo_links", `-> ${to.id}: ${evidence.length} evidence line(s)`);
       }
     }
   }
