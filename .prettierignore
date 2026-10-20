@@ -4,3 +4,4 @@ output
 pnpm-lock.yaml
 packages/context/test/fixtures
 docs/scope.pdf
+docs/API.md

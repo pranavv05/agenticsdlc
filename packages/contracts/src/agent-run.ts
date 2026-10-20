@@ -10,16 +10,15 @@ export type AgentRunStatus = z.infer<typeof AgentRunStatusSchema>;
 
 export const AgentRunSchema = z.object({
   id: IdSchema,
-  /** Absent for runs not tied to an initiative, such as indexing a repo. */
-  initiativeId: IdSchema.optional(),
+  initiativeId: IdSchema.optional().describe("Absent for runs not tied to an initiative, such as indexing a repo."),
   agent: AgentNameSchema,
-  model: z.string().min(1),
+  model: z.string().min(1).describe("Model id the call was made with."),
   inputTokens: z.number().int().min(0),
   outputTokens: z.number().int().min(0),
-  costUsd: z.number().min(0),
+  costUsd: z.number().min(0).describe("Estimated cost in US dollars, from the versioned price table."),
   latencyMs: z.number().int().min(0),
-  status: AgentRunStatusSchema,
-  error: z.string().max(LIMITS.shortText).optional(),
+  status: AgentRunStatusSchema.describe("The row is written after the call finishes, so there is no running state."),
+  error: z.string().max(LIMITS.shortText).optional().describe("Present when status is failed."),
   createdAt: TimestampSchema,
 });
 export type AgentRun = z.infer<typeof AgentRunSchema>;

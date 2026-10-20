@@ -27,3 +27,15 @@ One line each: decision, why.
 - `ClarificationQuestion` and `Approval` carry a `stage` (`requirements | design`) because scope §2 has the Design Agent raising questions too; `Approval` records the `artifactVersion` it applies to.
 - `AgentRun.status` is `succeeded | failed` (the row is written after the call finishes) and `initiativeId` is optional so indexing runs can be recorded too.
 - `ContextBundle` keeps the prototype's field names and adds `mode`, `tokenEstimate` and `truncated`; chunks use `repoId` (the prototype's `repoName`). `EMPTY_CONTEXT_BUNDLE` is what Case A's provider returns.
+- `docs/API.md` is generated, not written: the endpoint registry in `packages/contracts/src/endpoints.ts` (method, path, schemas, examples, error rows) is the single source for the doc, the server routes and the UI mock API. `pnpm docs:api` writes it, `pnpm docs:api:check` fails on drift (for CI), and a unit test fails `pnpm test` too. The file is excluded from Prettier so formatting cannot cause false drift.
+- Every example in the API doc is typed against its schema and parsed with it when the doc is generated: an example cannot describe a shape the API does not return.
+- `tsx` (dev only, contracts package) runs the doc generator; esbuild's install script is disabled because its binary comes from a platform package.
+- Creating an initiative also starts the workflow (`READY_FOR_SPEC -> REQUIREMENT_GENERATING`, triggered as `product`); there is no separate start endpoint. Creation is Product confirming the requirement is ready.
+- Agents run in the background: calls that start one return at once with a `*_GENERATING` status (repos: `profiling` / `indexing`) and clients poll. Server-sent events or webhooks are future work.
+- The stage in approve and request-changes decides the actor: `requirements` is Product, `design` is Architecture. After a decision the orchestrator immediately starts the next agent, so the response usually already shows `DESIGN_GENERATING` or `TASKS_GENERATING`.
+- Answers: all open requirements questions must be answered before the agent re-runs; design-stage answers are stored and used on the next change request; an answered question cannot be answered again.
+- Errors use one envelope with five codes: `validation_error` 400 (Zod issues in `details`), `not_found` 404, `invalid_transition` 409, `conflict` 409, `internal_error` 500.
+- Repo ids are lowercase slugs derived from the name, and `Initiative.repoId` is that slug. Repos go `profiling -> profiled -> indexing -> indexed` (or `failed`). Registering returns 202 and profiles in the background; indexing is a separate call so a person can look at the recommendation first.
+- Scope §6.1 gives no rule for repos between 200 and 999 files (full pipeline at 1000+, CLAUDE.md only under 200). The profiler thresholds are decided in the Context Agent PR and recorded here.
+- No endpoint yet lets a human edit an artifact's markdown. `needsHumanMerge` is in the contract; the edit and merge endpoints are added with the merge flow in Phase 5.
+- There is no authentication yet; `reviewer` is a free-form string.

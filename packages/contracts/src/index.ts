@@ -7,3 +7,8 @@ export * from "./clarification";
 export * from "./approval";
 export * from "./agent-run";
 export * from "./context";
+export * from "./repo";
+export * from "./api-schemas";
+export * from "./endpoints";
+export * from "./examples";
+export * from "./api-docs";

@@ -10,13 +10,11 @@ export type ApprovalDecision = z.infer<typeof ApprovalDecisionSchema>;
 export const ApprovalSchema = z.object({
   id: IdSchema,
   initiativeId: IdSchema,
-  stage: ApprovalStageSchema,
+  stage: ApprovalStageSchema.describe('"requirements" is decided by Product, "design" by Architecture.'),
   decision: ApprovalDecisionSchema,
-  /** Who decided. A free-form identifier until real auth exists. */
-  reviewer: z.string().min(1).max(LIMITS.title),
-  comment: z.string().max(LIMITS.longText),
-  /** The artifact version the decision applies to. */
-  artifactVersion: z.number().int().min(1),
+  reviewer: z.string().min(1).max(LIMITS.title).describe("Who decided. A free-form identifier until real auth exists."),
+  comment: z.string().max(LIMITS.longText).describe("Empty string when the reviewer gave no comment."),
+  artifactVersion: z.number().int().min(1).describe("The artifact version the decision applies to."),
   createdAt: TimestampSchema,
 });
 export type Approval = z.infer<typeof ApprovalSchema>;
