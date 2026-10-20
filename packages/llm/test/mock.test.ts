@@ -178,7 +178,6 @@ describe("configuration from the environment", () => {
     expect(createGateway({ env: { LLM_MODE: "mock" } }).mode).toBe("mock");
     expect(createGateway({ env: {} }).mode).toBe("live");
     expect(() => createGateway({ env: { LLM_MODE: "fake" } })).toThrow(/LLM_MODE/);
-    expect(() => createGateway({ env: { LLM_PROVIDER: "openai" } })).toThrow(/LLM_PROVIDER/);
   });
 
   it("the default gateway functions delegate to the installed gateway", async () => {

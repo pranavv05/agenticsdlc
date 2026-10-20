@@ -54,7 +54,7 @@ Integration tests (`packages/context/test/indexing.integration.test.ts`) run onl
 
 - Generated docs go to `<repo>/<module>/CLAUDE.md.generated.md`; an existing `CLAUDE.md` is never touched. Mindmaps go to `output/`.
 - Supported languages: TypeScript/JavaScript (including TSX/JSX), Python and Java. Add grammars in `packages/context/src/parse.ts`.
-- Optional env: `CLAUDE_MODEL` (default `claude-sonnet-5-5`), `MAX_MODULES_PER_REPO` (default 25).
+- Optional env: `LLM_MODEL` (default `claude-haiku-5-5` in development, `claude-sonnet-5-5` in production), `MAX_MODULES_PER_REPO` (default 25).
 
 ## Contributing
 

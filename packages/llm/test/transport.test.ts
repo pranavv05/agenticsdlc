@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, it } from "vitest";
-import { LlmConfigError, TransportError, createAnthropicTransport, createBedrockTransport, createGateway, type LlmRequest } from "../src";
+import { TransportError, createAnthropicTransport, type LlmRequest } from "../src";
 
 const request: LlmRequest = {
   model: "claude-haiku-5-5",
@@ -118,81 +118,5 @@ describe("Anthropic transport", () => {
       const failure = await failWith(new Anthropic.AnthropicError("Could not resolve authentication method")).catch((e: unknown) => e);
       expect(failure).toMatchObject({ retryable: false });
     });
-  });
-});
-
-describe("Bedrock transport", () => {
-  const ok = (json: unknown, init: ResponseInit = {}) =>
-    new Response(JSON.stringify(json), { status: 200, headers: { "content-type": "application/json" }, ...init });
-
-  it("posts to the regional invoke endpoint with a bearer token and the Bedrock body", async () => {
-    let seen: { url: string; init: RequestInit } | undefined;
-    const transport = createBedrockTransport({
-      apiKey: "key-123",
-      region: "us-east-1",
-      fetch: async (url, init) => {
-        seen = { url: String(url), init: init! };
-        return ok(body);
-      },
-    });
-    const response = await transport.send({ ...request, model: "us.anthropic.claude-haiku-5-5-v1:0" });
-
-    expect(seen!.url).toBe("https://bedrock-runtime.us-east-1.amazonaws.com/model/us.anthropic.claude-haiku-5-5-v1%3A0/invoke");
-    expect((seen!.init.headers as Record<string, string>).Authorization).toBe("Bearer key-123");
-    expect(JSON.parse(seen!.init.body as string)).toMatchObject({
-      anthropic_version: "bedrock-2023-05-31",
-      max_tokens: 1000,
-      system: "sys",
-      tool_choice: { type: "auto" },
-      output_config: { effort: "low" },
-    });
-    expect(response.toolInput).toEqual({ a: "x" });
-    expect(response.usage.inputTokens).toBe(120);
-  });
-
-  it("maps HTTP failures to retryable or fatal transport errors with Retry-After", async () => {
-    const make = (status: number, headers: Record<string, string> = {}) =>
-      createBedrockTransport({ apiKey: "k", region: "r", fetch: async () => new Response("nope", { status, headers }) });
-    expect(
-      await make(429, { "retry-after": "2" })
-        .send(request)
-        .catch((e: unknown) => e),
-    ).toMatchObject({ status: 429, retryable: true, retryAfterMs: 2000 });
-    expect(
-      await make(503)
-        .send(request)
-        .catch((e: unknown) => e),
-    ).toMatchObject({ status: 503, retryable: true });
-    expect(
-      await make(403)
-        .send(request)
-        .catch((e: unknown) => e),
-    ).toMatchObject({ status: 403, retryable: false });
-  });
-
-  it("treats a network failure as retryable", async () => {
-    const transport = createBedrockTransport({
-      apiKey: "k",
-      region: "r",
-      fetch: async () => Promise.reject(new TypeError("fetch failed")),
-    });
-    expect(await transport.send(request).catch((e: unknown) => e)).toMatchObject({ retryable: true, status: undefined });
-  });
-
-  it("refuses to start without a key or region", () => {
-    expect(() => createBedrockTransport({ apiKey: "", region: "us-east-1" })).toThrow(LlmConfigError);
-    expect(() => createBedrockTransport({ apiKey: "k", region: "" })).toThrow(LlmConfigError);
-  });
-
-  it("is selected by LLM_PROVIDER=bedrock and reports a missing key as a config error without retrying", async () => {
-    const sleeps: number[] = [];
-    const gateway = createGateway({
-      mode: "live",
-      env: { LLM_PROVIDER: "bedrock", LLM_MODEL: "us.anthropic.claude-haiku-5-5-v1:0" },
-      sleep: async (ms) => void sleeps.push(ms),
-    });
-    expect(gateway.provider).toBe("bedrock");
-    await expect(gateway.generateText({ agent: "context", system: "s", input: "i" })).rejects.toThrow(/BEDROCK_API_KEY/);
-    expect(sleeps).toEqual([]);
   });
 });

@@ -342,30 +342,20 @@ describe("usage hook", () => {
 });
 
 describe("model selection", () => {
-  it("prefers the call, then LLM_MODEL, then the legacy names", () => {
+  it("prefers the call's model, then LLM_MODEL, and ignores blank values", () => {
     expect(resolveModel("claude-opus-5-5", { LLM_MODEL: "claude-haiku-5-5" })).toBe("claude-opus-5-5");
-    expect(resolveModel(undefined, { LLM_MODEL: "claude-sonnet-5-5", SDD_MODEL: "x" })).toBe("claude-sonnet-5-5");
-    expect(resolveModel(undefined, { SDD_MODEL: "claude-sonnet-5" })).toBe("claude-sonnet-5");
-    expect(resolveModel(undefined, { CLAUDE_MODEL: "claude-opus-5" })).toBe("claude-opus-5");
+    expect(resolveModel(undefined, { LLM_MODEL: "claude-sonnet-5-5" })).toBe("claude-sonnet-5-5");
+    expect(resolveModel("  ", { LLM_MODEL: "claude-sonnet-5" })).toBe("claude-sonnet-5");
+    expect(resolveModel(undefined, { LLM_MODEL: "" })).toBe("claude-haiku-5-5");
+  });
+
+  it("no longer reads the prototype's SDD_MODEL or CLAUDE_MODEL", () => {
+    expect(resolveModel(undefined, { SDD_MODEL: "claude-opus-5", CLAUDE_MODEL: "claude-opus-5" } as never)).toBe("claude-haiku-5-5");
   });
 
   it("defaults to the cheap model in development and the stronger model in production", () => {
     expect(resolveModel(undefined, {})).toBe("claude-haiku-5-5");
     expect(resolveModel(undefined, { NODE_ENV: "test" })).toBe("claude-haiku-5-5");
     expect(resolveModel(undefined, { NODE_ENV: "production" })).toBe("claude-sonnet-5-5");
-  });
-
-  it("requires an explicit model on Bedrock", () => {
-    expect(() => resolveModel(undefined, {}, "bedrock")).toThrow(LlmConfigError);
-    expect(resolveModel(undefined, { LLM_MODEL: "us.anthropic.claude-sonnet-5-5-v1:0" }, "bedrock")).toBe(
-      "us.anthropic.claude-sonnet-5-5-v1:0",
-    );
-  });
-
-  it("prices a Bedrock inference-profile id like the model it wraps", async () => {
-    const model = "us.anthropic.claude-sonnet-5-5-v1:0";
-    const h = harness([reply({ toolInput: good, model })], { env: { LLM_MODEL: model } });
-    const { usage } = await h.gateway.generateStructured(baseRequest);
-    expect(usage.costUsd).toBe(0.004); // 1000 * $2/M + 200 * $10/M
   });
 });

@@ -8,7 +8,7 @@ const ROOT = path.resolve(import.meta.dirname, "../../..");
 dotenv.config({ path: path.join(ROOT, ".env.local") });
 dotenv.config({ path: path.join(ROOT, ".env") });
 
-const haveLlm = process.env.LLM_PROVIDER === "bedrock" ? !!process.env.BEDROCK_API_KEY : !!process.env.ANTHROPIC_API_KEY;
+const haveLlm = !!process.env.ANTHROPIC_API_KEY;
 const haveKeys = !!(haveLlm && process.env.VOYAGE_API_KEY && process.env.DATABASE_URL);
 const REPO_NAME = "sdd-fixture-sample-repo";
 
