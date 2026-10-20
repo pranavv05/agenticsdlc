@@ -7,11 +7,10 @@ export type ClarificationStage = z.infer<typeof ClarificationStageSchema>;
 export const ClarificationQuestionSchema = z.object({
   id: IdSchema,
   initiativeId: IdSchema,
-  stage: ClarificationStageSchema,
+  stage: ClarificationStageSchema.describe("Which agent raised the question."),
   question: z.string().min(1).max(LIMITS.shortText),
-  /** Null until a human answers. */
-  answer: z.string().min(1).max(LIMITS.longText).nullable(),
+  answer: z.string().min(1).max(LIMITS.longText).nullable().describe("Null until a human answers."),
   createdAt: TimestampSchema,
-  answeredAt: TimestampSchema.nullable(),
+  answeredAt: TimestampSchema.nullable().describe("Null until a human answers."),
 });
 export type ClarificationQuestion = z.infer<typeof ClarificationQuestionSchema>;

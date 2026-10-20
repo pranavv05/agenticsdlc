@@ -29,14 +29,14 @@ export type ClaudeMdSection = z.infer<typeof ClaudeMdSectionSchema>;
 /** What a ContextProvider returns. The same shape for every retrieval mode; Case A gets an empty bundle. */
 export const ContextBundleSchema = z.object({
   /** Null when no retrieval happened (Case A). */
-  mode: RetrievalModeSchema.nullable(),
+  mode: RetrievalModeSchema.nullable().describe("Null when no retrieval happened (Case A)."),
   chunks: z.array(ContextChunkSchema),
   relevantClaudeMdSections: z.array(ClaudeMdSectionSchema),
   relevantMindmapExcerpt: z.string(),
   /** Rough size of the bundle, used to enforce budgetTokens. */
-  tokenEstimate: z.number().int().min(0),
+  tokenEstimate: z.number().int().min(0).describe("Rough size of the bundle, used to enforce the token budget."),
   /** True when content was cut to fit the budget. */
-  truncated: z.boolean(),
+  truncated: z.boolean().describe("True when content was cut to fit the budget."),
 });
 export type ContextBundle = z.infer<typeof ContextBundleSchema>;
 

@@ -9,10 +9,13 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "docs:api": "tsx scripts/generate-api-docs.ts",
+    "docs:api:check": "tsx scripts/generate-api-docs.ts --check"
   },
   "devDependencies": {
     "@types/node": "26.6.5",
+    "tsx": "4.23.15",
     "typescript": "5.9.3",
     "vitest": "5.0.5"
   },

@@ -17,7 +17,9 @@
     "db:up": "docker compose up -d --wait postgres",
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d --wait postgres",
-    "db:psql": "docker compose exec postgres psql -U sdd -d sdd"
+    "db:psql": "docker compose exec postgres psql -U sdd -d sdd",
+    "docs:api": "pnpm --filter @sdd/contracts docs:api",
+    "docs:api:check": "pnpm --filter @sdd/contracts docs:api:check"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
