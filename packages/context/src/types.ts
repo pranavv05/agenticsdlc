@@ -8,13 +8,6 @@ export interface RepoTarget {
   path: string;
 }
 
-/** The prototype's hand-edited repos.config.json entry. Kept only until the repo registry replaces it. */
-export interface RepoConfig {
-  name: string;
-  path: string;
-  description: string;
-}
-
 export type ChunkType = "function" | "class" | "route" | "other";
 
 export interface ChunkRecord {
