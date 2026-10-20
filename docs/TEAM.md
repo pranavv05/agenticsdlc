@@ -1,11 +1,11 @@
 # Team and ownership
 
-| Person  | Owns                                                                                                           | Packages                                                |
-| ------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Person  | Owns                                                                                                          | Packages                                                |
+| ------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | Pranav  | Technical owner. Contracts, LLM gateway, Context Agent, workflow, Requirement and Design agents, architecture | `contracts`, `llm`, `context`, `orchestrator`, `agents` |
-| Shuraim | REST API layer, Task Agent, prompt-injection hardening, evaluation scoring                                     | `orchestrator` (API layer), `agents` (Task), `eval`     |
-| Sourav  | React UI built against a mock API, evaluation cases                                                            | `ui`, `eval` (cases)                                    |
-| Tejas   | Docker, migrations, CI, Git integration, MCP server, evaluation runner                                         | `mcp-server`, infra, CI, `eval` (runner)                |
+| Shuraim | REST API layer, Task Agent, prompt-injection hardening, evaluation scoring                                    | `orchestrator` (API layer), `agents` (Task), `eval`     |
+| Sourav  | React UI built against a mock API, evaluation cases                                                           | `ui`, `eval` (cases)                                    |
+| Tejas   | Docker, migrations, CI, Git integration, MCP server, evaluation runner                                        | `mcp-server`, infra, CI, `eval` (runner)                |
 
 Detailed task lists, owners and timing live in `docs/TASKS.md` and the GitHub issues.
 

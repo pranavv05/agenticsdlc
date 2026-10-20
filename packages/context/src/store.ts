@@ -18,7 +18,16 @@ export async function insertChunks(chunks: ChunkRecord[]): Promise<void> {
     const values: unknown[] = [];
     const rows = batch.map((c, j) => {
       const o = j * 8;
-      values.push(c.repoName, c.filePath, c.symbolName, c.chunkType, c.code, c.embedding ? toVector(c.embedding) : null, c.startLine, c.endLine);
+      values.push(
+        c.repoName,
+        c.filePath,
+        c.symbolName,
+        c.chunkType,
+        c.code,
+        c.embedding ? toVector(c.embedding) : null,
+        c.startLine,
+        c.endLine,
+      );
       return `($${o + 1},$${o + 2},$${o + 3},$${o + 4},$${o + 5},$${o + 6}::vector,$${o + 7},$${o + 8})`;
     });
     await pool.query(

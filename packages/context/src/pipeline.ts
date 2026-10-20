@@ -11,7 +11,16 @@ import { isSourceFile } from "./parse";
 import { walkRepo, type WalkedFile } from "./walk";
 import { pMap } from "./llm";
 import { log, logHeader } from "./log";
-import type { ChunkRecord, CrossRepoLink, DependencyEdge, ModuleDoc, ProgressCallback, ProgressCounts, ProgressStage, RepoConfig } from "./types";
+import type {
+  ChunkRecord,
+  CrossRepoLink,
+  DependencyEdge,
+  ModuleDoc,
+  ProgressCallback,
+  ProgressCounts,
+  ProgressStage,
+  RepoConfig,
+} from "./types";
 
 export const SYSTEM_KEY = "(system)";
 const MODULE_CONCURRENCY = 3;
@@ -33,7 +42,9 @@ interface RepoState {
 }
 
 function fmt(counts: ProgressCounts): string {
-  return Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(" ");
+  return Object.entries(counts)
+    .map(([k, v]) => `${k}=${v}`)
+    .join(" ");
 }
 
 /**
@@ -105,7 +116,10 @@ export async function indexAllRepos(onProgress: ProgressCallback, opts: IndexOpt
   let links: CrossRepoLink[] = [];
   try {
     links = await detectCrossRepoLinks(ok.map((s) => s.repo));
-    await replaceCrossRepoLinks(ok.map((s) => s.repo.name), links);
+    await replaceCrossRepoLinks(
+      ok.map((s) => s.repo.name),
+      links,
+    );
     await emit(SYSTEM_KEY, "cross_repo_links", { links: links.length, complete: 1 });
   } catch (err) {
     await emit(SYSTEM_KEY, "error", { message: `cross-repo links: ${(err as Error).message}` });
@@ -150,7 +164,11 @@ export async function indexAllRepos(onProgress: ProgressCallback, opts: IndexOpt
   }
 
   try {
-    await generateSystemMindmap(ok.map((s) => s.repo), links, outputDir);
+    await generateSystemMindmap(
+      ok.map((s) => s.repo),
+      links,
+      outputDir,
+    );
     await emit(SYSTEM_KEY, "mindmap", { diagrams: 1, complete: 1 });
   } catch (err) {
     failed.add(SYSTEM_KEY);

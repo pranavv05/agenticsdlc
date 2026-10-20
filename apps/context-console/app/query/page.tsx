@@ -76,9 +76,15 @@ export default function QueryPage() {
                 <article key={c.id} className="rounded-lg border bg-white shadow-sm">
                   <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2 text-xs">
                     <span className="rounded bg-slate-100 px-1.5 py-0.5">{c.repoName}</span>
-                    <span className="font-mono">{c.filePath}:{c.startLine}-{c.endLine}</span>
-                    <span className="text-slate-500">{c.chunkType} {c.symbolName}</span>
-                    <span className={`ml-auto rounded px-1.5 py-0.5 ${c.via === "similarity" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"}`}>
+                    <span className="font-mono">
+                      {c.filePath}:{c.startLine}-{c.endLine}
+                    </span>
+                    <span className="text-slate-500">
+                      {c.chunkType} {c.symbolName}
+                    </span>
+                    <span
+                      className={`ml-auto rounded px-1.5 py-0.5 ${c.via === "similarity" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"}`}
+                    >
                       {c.via === "similarity" ? `score ${c.score?.toFixed(3)}` : "via dependency"}
                     </span>
                   </header>
@@ -90,10 +96,14 @@ export default function QueryPage() {
 
           <section>
             <h2 className="mb-3 text-lg font-medium">CLAUDE.md excerpts</h2>
-            {bundle.relevantClaudeMdSections.length === 0 && <p className="text-sm text-slate-500">None found (has indexing generated CLAUDE.md.generated.md files?).</p>}
+            {bundle.relevantClaudeMdSections.length === 0 && (
+              <p className="text-sm text-slate-500">None found (has indexing generated CLAUDE.md.generated.md files?).</p>
+            )}
             {bundle.relevantClaudeMdSections.map((s) => (
               <details key={`${s.repoName}:${s.path}`} className="mb-2 rounded border bg-white p-3">
-                <summary className="cursor-pointer text-sm font-medium">{s.repoName} / {s.path}</summary>
+                <summary className="cursor-pointer text-sm font-medium">
+                  {s.repoName} / {s.path}
+                </summary>
                 <pre className="mt-2 whitespace-pre-wrap text-xs">{s.content}</pre>
               </details>
             ))}

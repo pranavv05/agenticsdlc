@@ -2,7 +2,11 @@ import Link from "next/link";
 
 const cards = [
   { href: "/index", title: "Index", body: "Chunk, embed and document every configured repo, and watch progress live." },
-  { href: "/query", title: "Query", body: "Sanity-check retrieval: describe a feature and see which code, CLAUDE.md and mindmap context comes back." },
+  {
+    href: "/query",
+    title: "Query",
+    body: "Sanity-check retrieval: describe a feature and see which code, CLAUDE.md and mindmap context comes back.",
+  },
 ];
 
 export default function Home() {

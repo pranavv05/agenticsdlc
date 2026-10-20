@@ -40,15 +40,7 @@ export interface ModuleDoc {
 }
 
 export type ProgressStage =
-  | "files"
-  | "chunks"
-  | "embeddings"
-  | "dependencies"
-  | "cross_repo_links"
-  | "claude_md"
-  | "mindmap"
-  | "done"
-  | "error";
+  "files" | "chunks" | "embeddings" | "dependencies" | "cross_repo_links" | "claude_md" | "mindmap" | "done" | "error";
 
 export type ProgressCounts = Record<string, number | string>;
 

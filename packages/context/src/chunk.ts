@@ -92,7 +92,13 @@ function extractTs(root: Node, rel: string): Raw[] {
 }
 
 const JAVA_ROUTE_ANNOTATION = /@(Get|Post|Put|Patch|Delete|Request)Mapping\b|@(GET|POST|PUT|PATCH|DELETE)\b/;
-const JAVA_TYPES = new Set(["class_declaration", "interface_declaration", "enum_declaration", "record_declaration", "annotation_type_declaration"]);
+const JAVA_TYPES = new Set([
+  "class_declaration",
+  "interface_declaration",
+  "enum_declaration",
+  "record_declaration",
+  "annotation_type_declaration",
+]);
 
 /** Class-level chunk = signature + field declarations (methods get their own chunks). */
 function javaClassChunk(decl: Node, name: string | null): Materialised {
@@ -113,7 +119,7 @@ function extractJava(root: Node): Materialised[] {
     for (const n of container.namedChildren) {
       if (JAVA_TYPES.has(n.type)) {
         const name = nameOf(n);
-        const qualified = owner ? `${owner}.${name}` : name ?? "";
+        const qualified = owner ? `${owner}.${name}` : (name ?? "");
         out.push(javaClassChunk(n, qualified));
         const body = n.childForFieldName("body");
         if (body) visit(body, qualified);
@@ -141,7 +147,10 @@ function extractPython(root: Node): Raw[] {
     else if (top.type === "decorated_definition") {
       const def = top.childForFieldName("definition");
       if (!def) continue;
-      const decorators = top.namedChildren.filter((c) => c.type === "decorator").map((c) => c.text).join("\n");
+      const decorators = top.namedChildren
+        .filter((c) => c.type === "decorator")
+        .map((c) => c.text)
+        .join("\n");
       const isRoute = PY_ROUTE_DECORATOR.test(decorators);
       const type: ChunkType = isRoute ? "route" : def.type === "class_definition" ? "class" : "function";
       out.push({ name: nameOf(def), type, node: top });

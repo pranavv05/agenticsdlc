@@ -5,16 +5,53 @@ import { walkRepo, type WalkedFile } from "./walk";
 import { log } from "./log";
 
 const SCAN_EXTS = new Set([
-  ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".py", ".json", ".yml", ".yaml", ".toml",
-  ".env", ".properties", ".conf", ".ini", ".sh", ".gradle", ".kts", ".xml", ".java", ".kt",
+  ".ts",
+  ".tsx",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+  ".py",
+  ".json",
+  ".yml",
+  ".yaml",
+  ".toml",
+  ".env",
+  ".properties",
+  ".conf",
+  ".ini",
+  ".sh",
+  ".gradle",
+  ".kts",
+  ".xml",
+  ".java",
+  ".kt",
 ]);
 const SKIP_FILES = /(^|\/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|poetry\.lock|Pipfile\.lock)$/;
 const MAX_SCAN_BYTES = 300_000;
 const MAX_EVIDENCE_PER_PAIR = 6;
 // Infrastructure hostnames shared by nearly every compose file; matching them says nothing about coupling.
 const GENERIC_HOSTS = new Set([
-  "db", "database", "redis", "postgres", "postgresql", "mysql", "mongo", "mongodb", "rabbitmq", "kafka",
-  "zookeeper", "nginx", "app", "web", "api", "server", "worker", "cache", "localstack", "elasticsearch",
+  "db",
+  "database",
+  "redis",
+  "postgres",
+  "postgresql",
+  "mysql",
+  "mongo",
+  "mongodb",
+  "rabbitmq",
+  "kafka",
+  "zookeeper",
+  "nginx",
+  "app",
+  "web",
+  "api",
+  "server",
+  "worker",
+  "cache",
+  "localstack",
+  "elasticsearch",
 ]);
 
 function isScannable(rel: string): boolean {
@@ -61,7 +98,10 @@ function escapeRe(s: string): string {
 
 /** Matches "my-repo", "my_repo", "my repo" interchangeably, not embedded in a longer identifier. */
 function nameRegex(name: string): RegExp {
-  const body = name.split(/[-_ ]+/).map(escapeRe).join("[-_ ]?");
+  const body = name
+    .split(/[-_ ]+/)
+    .map(escapeRe)
+    .join("[-_ ]?");
   return new RegExp(`(?<![A-Za-z0-9_-])${body}(?![A-Za-z0-9_-])`, "i");
 }
 

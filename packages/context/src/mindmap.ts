@@ -6,7 +6,7 @@ import { safeName } from "./config";
 
 const SYSTEM_PROMPT =
   "You produce Mermaid diagrams for software architecture documentation. " +
-  "Rules: use `flowchart LR`; node ids must be simple alphanumerics (A, B, mod1...); put every label in double quotes, e.g. A[\"billing\"]; " +
+  'Rules: use `flowchart LR`; node ids must be simple alphanumerics (A, B, mod1...); put every label in double quotes, e.g. A["billing"]; ' +
   "no parentheses, brackets or colons inside labels; output exactly one ```mermaid fenced block followed by a short prose explanation (3-6 sentences). " +
   "Only draw relationships supported by the input.";
 
@@ -98,7 +98,11 @@ ${crossRepoLinks.map((l) => `- ${l.fromRepo} -> ${l.toRepo}: ${l.evidence.slice(
 
   const { mermaid, prose } = splitResponse(await complete(SYSTEM_PROMPT, prompt, 2000));
   const id = (n: string) => "r_" + n.replace(/[^A-Za-z0-9]/g, "_");
-  const fallback = ["flowchart LR", ...repos.map((r) => `  ${id(r.name)}["${r.name}"]`), ...crossRepoLinks.map((l) => `  ${id(l.fromRepo)} --> ${id(l.toRepo)}`)].join("\n");
+  const fallback = [
+    "flowchart LR",
+    ...repos.map((r) => `  ${id(r.name)}["${r.name}"]`),
+    ...crossRepoLinks.map((l) => `  ${id(l.fromRepo)} --> ${id(l.toRepo)}`),
+  ].join("\n");
   const finalMermaid = mermaid ?? fallback;
   await write(outputDir, "system", finalMermaid, prose, "System overview");
   return { mermaid: finalMermaid, prose };

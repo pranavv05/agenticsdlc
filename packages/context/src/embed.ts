@@ -49,10 +49,7 @@ export async function embedTexts(texts: string[], inputType: "document" | "query
 }
 
 /** Batch-embed chunks with voyage-code-3; returns chunks with `embedding` attached. */
-export async function embedChunks(
-  chunks: ChunkRecord[],
-  onBatch?: (done: number, total: number) => void,
-): Promise<ChunkRecord[]> {
+export async function embedChunks(chunks: ChunkRecord[], onBatch?: (done: number, total: number) => void): Promise<ChunkRecord[]> {
   const result: ChunkRecord[] = [];
   for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
     const batch = chunks.slice(i, i + BATCH_SIZE);

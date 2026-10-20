@@ -31,7 +31,10 @@ async function completeBedrock(system: string, prompt: string, maxTokens: number
     });
     if (res.ok) {
       const json = (await res.json()) as { content: { type: string; text?: string }[] };
-      return json.content.map((b) => (b.type === "text" ? b.text ?? "" : "")).join("").trim();
+      return json.content
+        .map((b) => (b.type === "text" ? (b.text ?? "") : ""))
+        .join("")
+        .trim();
     }
     const retryable = res.status === 429 || res.status >= 500;
     if (!retryable || attempt >= 5) throw new Error(`Bedrock invoke failed (${model}): ${res.status} ${await res.text()}`);
@@ -47,7 +50,10 @@ async function completeAnthropic(system: string, prompt: string, maxTokens: numb
     system,
     messages: [{ role: "user", content: prompt }],
   });
-  return res.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
+  return res.content
+    .map((b) => (b.type === "text" ? b.text : ""))
+    .join("")
+    .trim();
 }
 
 /** LLM call routed by LLM_PROVIDER ("bedrock", otherwise direct Anthropic API). */

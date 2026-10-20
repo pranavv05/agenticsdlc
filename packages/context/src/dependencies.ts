@@ -79,7 +79,10 @@ function pySpecifiers(root: Node, from: string, files: Set<string>): string[] {
       const mod = n.childForFieldName("module_name")?.text;
       if (!mod) continue;
       const bases = resolvePythonModule(from, mod);
-      const names = n.childrenForFieldName("name").map((c) => (c.type === "aliased_import" ? c.childForFieldName("name")?.text : c.text)).filter(Boolean) as string[];
+      const names = n
+        .childrenForFieldName("name")
+        .map((c) => (c.type === "aliased_import" ? c.childForFieldName("name")?.text : c.text))
+        .filter(Boolean) as string[];
       for (const b of bases) {
         const hit = pyFileFor(b, files);
         if (hit) out.push(hit);
@@ -148,7 +151,9 @@ export async function extractDependencies(repoPath: string, repoName: string, wa
       targets = await withTree(code, lang, (root) => {
         if (lang === "python") return pySpecifiers(root, f.rel, fileSet);
         if (lang === "java") return javaImports(root, javaIdx);
-        return tsSpecifiers(root).map((s) => resolveTs(f.rel, s, fileSet)).filter((x): x is string => !!x);
+        return tsSpecifiers(root)
+          .map((s) => resolveTs(f.rel, s, fileSet))
+          .filter((x): x is string => !!x);
       });
     } catch {
       continue;

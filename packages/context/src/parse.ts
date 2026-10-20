@@ -5,9 +5,14 @@ import { Parser, Language, type Node } from "web-tree-sitter";
 export type LangId = "typescript" | "tsx" | "python" | "java";
 
 const EXT_TO_LANG: Record<string, LangId> = {
-  ".ts": "typescript", ".mts": "typescript", ".cts": "typescript",
-  ".tsx": "tsx", ".jsx": "tsx",
-  ".js": "typescript", ".mjs": "typescript", ".cjs": "typescript",
+  ".ts": "typescript",
+  ".mts": "typescript",
+  ".cts": "typescript",
+  ".tsx": "tsx",
+  ".jsx": "tsx",
+  ".js": "typescript",
+  ".mjs": "typescript",
+  ".cjs": "typescript",
   ".py": "python",
   ".java": "java",
 };

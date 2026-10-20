@@ -9,8 +9,22 @@ export interface WalkedFile {
 }
 
 const ALWAYS_IGNORED_DIRS = new Set([
-  ".git", "node_modules", ".next", "dist", "build", "out", "coverage", "__pycache__",
-  ".venv", "venv", ".idea", ".vscode", ".turbo", "target", ".pytest_cache", ".mypy_cache",
+  ".git",
+  "node_modules",
+  ".next",
+  "dist",
+  "build",
+  "out",
+  "coverage",
+  "__pycache__",
+  ".venv",
+  "venv",
+  ".idea",
+  ".vscode",
+  ".turbo",
+  "target",
+  ".pytest_cache",
+  ".mypy_cache",
 ]);
 
 export const GENERATED_CLAUDE_MD = "CLAUDE.md.generated.md";

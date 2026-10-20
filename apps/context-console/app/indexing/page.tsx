@@ -4,7 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type Counts = Record<string, number | string>;
 type RepoProgress = { stage: string; stages: Record<string, Counts>; error?: string };
-type Run = { id: number; status: "running" | "done" | "error"; startedAt: string; finishedAt: string | null; perRepoProgress: Record<string, RepoProgress> };
+type Run = {
+  id: number;
+  status: "running" | "done" | "error";
+  startedAt: string;
+  finishedAt: string | null;
+  perRepoProgress: Record<string, RepoProgress>;
+};
 
 const STEPS: { key: string; label: string; detail: (c: Counts) => string }[] = [
   { key: "files", label: "Files found", detail: (c) => `${c.source} source / ${c.total} total` },
@@ -109,7 +115,9 @@ export default function IndexPage() {
         </div>
       )}
       {run?.status === "error" && (
-        <div className="mt-4 rounded border border-red-300 bg-red-50 p-4 text-red-900">Indexing finished with errors — see the failed repos below and the server log.</div>
+        <div className="mt-4 rounded border border-red-300 bg-red-50 p-4 text-red-900">
+          Indexing finished with errors — see the failed repos below and the server log.
+        </div>
       )}
 
       <div className="mt-6 space-y-4">

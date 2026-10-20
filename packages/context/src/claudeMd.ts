@@ -55,10 +55,7 @@ export async function detectModules(repoPath: string, walked?: WalkedFile[]): Pr
     const base = parts[parts.length - 1];
     const parent = parts.length > 1 ? parts[parts.length - 2] : "";
     return (
-      manifestDirs.has(d) ||
-      (directSource.get(d) ?? 0) >= MIN_SOURCE_FILES ||
-      MODULE_NAME_RE.test(base) ||
-      MODULE_NAME_RE.test(parent)
+      manifestDirs.has(d) || (directSource.get(d) ?? 0) >= MIN_SOURCE_FILES || MODULE_NAME_RE.test(base) || MODULE_NAME_RE.test(parent)
     );
   });
 
@@ -102,7 +99,13 @@ export async function generateModuleClaudeMd(
   const repo = opts.repoName ?? "the repo";
   const cross = (opts.crossRepoLinks ?? []).filter((l) => l.fromRepo === repo || l.toRepo === repo);
 
-  const fmt = (es: DependencyEdge[]) => (es.length ? es.slice(0, 60).map((e) => `- ${e.filePath} -> ${e.importsFilePath}`).join("\n") : "(none)");
+  const fmt = (es: DependencyEdge[]) =>
+    es.length
+      ? es
+          .slice(0, 60)
+          .map((e) => `- ${e.filePath} -> ${e.importsFilePath}`)
+          .join("\n")
+      : "(none)";
   const prompt = `Write the CLAUDE.md for the module \`${moduleDir}\` of repo \`${repo}\`.
 
 Required structure (Markdown):
@@ -194,7 +197,11 @@ ${cross.length ? cross.map((l) => `- ${l.fromRepo} -> ${l.toRepo}`).join("\n") :
   const overview = await complete(SYSTEM_PROMPT, prompt, 1200);
 
   const table = modules.length
-    ? ["| Module | Summary | CLAUDE.md |", "| --- | --- | --- |", ...modules.map((m) => `| \`${m.dir}\` | ${m.summary} | \`${m.claudeMdPath}\` |`)].join("\n")
+    ? [
+        "| Module | Summary | CLAUDE.md |",
+        "| --- | --- | --- |",
+        ...modules.map((m) => `| \`${m.dir}\` | ${m.summary} | \`${m.claudeMdPath}\` |`),
+      ].join("\n")
     : "_No modules detected._";
 
   return `# ${repo.name}\n\n> ${repo.description}\n\n## Overview\n\n${overview}\n\n## Commands\n\n${commands}\n\n## Modules\n\n${table}\n`;
