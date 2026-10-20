@@ -1,0 +1,8 @@
+{
+  "name": "shop-api",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "lint": "eslint ."
+  }
+}

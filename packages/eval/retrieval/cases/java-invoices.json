@@ -1,0 +1,15 @@
+{
+  "name": "java-invoices",
+  "description": "The tiny Java fixture used by the Context Agent tests (3 files). Checks that the harness works for a second language.",
+  "repo": "../../../context/test/fixtures/java-sample",
+  "cases": [
+    {
+      "task": "Add the totals of the invoice lines and expose the sum over HTTP",
+      "expectedFiles": ["src/main/java/com/acme/billing/InvoiceService.java", "src/main/java/com/acme/billing/InvoiceController.java"]
+    },
+    {
+      "task": "Check whether an authentication token is valid",
+      "expectedFiles": ["src/main/java/com/acme/auth/AuthService.java"]
+    }
+  ]
+}
