@@ -1,0 +1,8 @@
+# Default owner for everything.
+* @pranavv05
+
+# Add teammates' GitHub handles once they have accepted their invites, e.g.:
+# /packages/ui/          @<sourav-handle>
+# /packages/mcp-server/  @<tejas-handle>
+# /packages/eval/        @<shuraim-handle> @<sourav-handle> @<tejas-handle>
+# /docs/API.md           @pranavv05 @<shuraim-handle>
