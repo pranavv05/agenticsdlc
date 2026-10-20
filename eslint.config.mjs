@@ -14,4 +14,27 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
     },
   },
+  {
+    // Every model call goes through @sdd/llm (retries, usage and cost records, mock mode). Nothing else may import the SDK.
+    ignores: ["packages/llm/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@anthropic-ai/sdk",
+              message: "Call models through @sdd/llm (generateStructured / generateText), not the SDK directly.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["@anthropic-ai/sdk/*"],
+              message: "Call models through @sdd/llm (generateStructured / generateText), not the SDK directly.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

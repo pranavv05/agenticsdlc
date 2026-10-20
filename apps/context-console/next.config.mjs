@@ -12,7 +12,7 @@ if (fs.existsSync(rootEnv)) {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // workspace packages ship TypeScript source, so Next must compile them
-  transpilePackages: ["@sdd/context"],
+  transpilePackages: ["@sdd/context", "@sdd/llm", "@sdd/contracts"],
   experimental: {
     // keep wasm-loading / native-ish packages out of the webpack bundle
     serverComponentsExternalPackages: [

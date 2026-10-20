@@ -3,7 +3,7 @@ import path from "node:path";
 import type { ChunkRecord, CrossRepoLink, DependencyEdge, ModuleDoc, ModuleInfo, RepoConfig } from "./types";
 import { isSourceFile } from "./parse";
 import { walkRepo, GENERATED_CLAUDE_MD, type WalkedFile } from "./walk";
-import { complete } from "./llm";
+import { generateText, wrapUntrusted } from "@sdd/llm";
 
 const MODULE_NAME_RE = /^(services?|controllers?|routes?|modules?|apps?|packages?)$/;
 const MANIFESTS = new Set(["package.json", "pyproject.toml", "go.mod", "pom.xml", "build.gradle", "build.gradle.kts"]);
@@ -15,6 +15,12 @@ const SYSTEM_PROMPT =
   "You are a senior engineer writing CLAUDE.md context files that help AI coding agents work in an unfamiliar codebase. " +
   "Be concrete and terse. Only state what the provided code supports; write 'none detected' rather than guessing. " +
   "Output Markdown only, with no preamble and no code fences around the whole document.";
+
+/** One documentation call through the gateway. `name` becomes the usage record name and the mock fixture key. */
+async function generateDoc(name: string, prompt: string, maxTokens: number): Promise<string> {
+  const { text } = await generateText({ agent: "context", name, system: SYSTEM_PROMPT, input: prompt, maxTokens });
+  return text;
+}
 
 export function claudeMdRelPath(dir: string): string {
   return dir ? `${dir}/${GENERATED_CLAUDE_MD}` : GENERATED_CLAUDE_MD;
@@ -117,20 +123,23 @@ A single-sentence summary on the line directly under the heading (no label, no b
 ## Connects to   (subsections "Intra-repo" and "Cross-repo"; cite file paths)
 
 # Dependency edges (file -> file imported)
-Within this module (${internal.length}):
+${wrapUntrusted(
+  "dependency-edges",
+  `Within this module (${internal.length}):
 ${fmt(internal)}
 This module imports from other modules (${outgoing.length}):
 ${fmt(outgoing)}
 Other modules import this module (${incoming.length}):
-${fmt(incoming)}
+${fmt(incoming)}`,
+)}
 
 # Cross-repo links involving ${repo}
-${cross.length ? cross.map((l) => `- ${l.fromRepo} -> ${l.toRepo}: ${l.evidence.slice(0, 3).join(" | ")}`).join("\n") : "(none detected)"}
+${wrapUntrusted("cross-repo-links", cross.length ? cross.map((l) => `- ${l.fromRepo} -> ${l.toRepo}: ${l.evidence.slice(0, 3).join(" | ")}`).join("\n") : "(none detected)")}
 
 # Module code
-${summariseChunks(own)}`;
+${wrapUntrusted("module-code", summariseChunks(own))}`;
 
-  return complete(SYSTEM_PROMPT, prompt, 3000);
+  return generateDoc("module-claude-md", prompt, 3000);
 }
 
 /** First prose line under the top heading, used for the root index table. */
@@ -183,18 +192,18 @@ export async function generateRootClaudeMd(
 Two or three short paragraphs: what the system does, main tech stack, and how the code is organised. No heading, no lists of commands.
 
 # README excerpt
-${readme || "(no README)"}
+${wrapUntrusted("readme", readme || "(no README)")}
 
 # Top-level files
-${(opts.fileList ?? []).slice(0, 80).join("\n") || "(unknown)"}
+${wrapUntrusted("top-level-files", (opts.fileList ?? []).slice(0, 80).join("\n") || "(unknown)")}
 
 # Module summaries
-${modules.map((m) => `- ${m.dir}: ${m.summary}`).join("\n") || "(no modules detected)"}
+${wrapUntrusted("module-summaries", modules.map((m) => `- ${m.dir}: ${m.summary}`).join("\n") || "(no modules detected)")}
 
 # Cross-repo links
 ${cross.length ? cross.map((l) => `- ${l.fromRepo} -> ${l.toRepo}`).join("\n") : "(none detected)"}`;
 
-  const overview = await complete(SYSTEM_PROMPT, prompt, 1200);
+  const overview = await generateDoc("root-claude-md", prompt, 1200);
 
   const table = modules.length
     ? [
