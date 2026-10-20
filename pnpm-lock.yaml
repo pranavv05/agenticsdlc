@@ -236,9 +236,9 @@ importers:
 
   packages/context:
     dependencies:
-      '@anthropic-ai/sdk':
-        specifier: 0.134.0
-        version: 0.134.0(zod@4.6.7)
+      '@sdd/llm':
+        specifier: workspace:*
+        version: link:../llm
       ignore:
         specifier: 7.0.12
         version: 7.0.12
@@ -309,6 +309,16 @@ importers:
         version: 5.9.3
 
   packages/llm:
+    dependencies:
+      '@anthropic-ai/sdk':
+        specifier: 0.134.0
+        version: 0.134.0(zod@4.6.7)
+      '@sdd/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@types/node':
         specifier: 26.6.5
@@ -316,6 +326,9 @@ importers:
       typescript:
         specifier: 5.9.3
         version: 5.9.3
+      vitest:
+        specifier: 5.0.5
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.6.5)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2)(jiti@1.21.7)(tsx@4.23.15))
 
   packages/mcp-server:
     devDependencies:
