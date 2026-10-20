@@ -13,7 +13,11 @@
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
-    "dev:console": "pnpm --filter @sdd/context-console dev"
+    "dev:console": "pnpm --filter @sdd/context-console dev",
+    "db:up": "docker compose up -d --wait postgres",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d --wait postgres",
+    "db:psql": "docker compose exec postgres psql -U sdd -d sdd"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

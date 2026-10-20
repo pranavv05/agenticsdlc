@@ -1,14 +1,21 @@
 services:
   postgres:
     image: pgvector/pgvector:pg16
+    container_name: sdd-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: sdd
       POSTGRES_PASSWORD: sdd
       POSTGRES_DB: sdd
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./packages/context/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro # applied on first start only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sdd -d sdd"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 volumes:
   pgdata:

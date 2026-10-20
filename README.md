@@ -39,10 +39,12 @@ To use the Context Agent console:
 
 ```bash
 cp .env.example .env     # fill ANTHROPIC_API_KEY and VOYAGE_API_KEY (the DATABASE_URL default matches docker-compose)
-docker compose up -d     # Postgres + pgvector; applies packages/context/schema.sql on first start
+pnpm db:up               # Postgres + pgvector in Docker; applies packages/context/schema.sql on first start
 # edit apps/context-console/repos.config.json with your repos (name, absolute path, description)
 pnpm dev:console         # http://localhost:3000 - open /indexing, then /query
 ```
+
+Database helpers: `pnpm db:down` (stop, keep data), `pnpm db:reset` (wipe and re-apply the schema), `pnpm db:psql` (open a psql shell).
 
 Integration tests (`packages/context/test/indexing.integration.test.ts`) run only when `DATABASE_URL`, `VOYAGE_API_KEY` and an LLM key are set.
 

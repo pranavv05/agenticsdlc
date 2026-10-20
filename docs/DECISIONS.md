@@ -14,3 +14,4 @@ One line each: decision, why.
 - `repos.config.json` and `output/` stay relative to the console app's working directory for now: Phase 4 replaces the hand-edited config with the repo profiler.
 - Prettier uses `printWidth: 140`: it matches the prototype's existing style and keeps the formatting diff small.
 - `llm`, `orchestrator`, `agents`, `mcp-server`, `ui` and `eval` are empty placeholder packages so teammates can start against stable names; each is filled by its owner (see `docs/TEAM.md`).
+- Postgres runs only in Docker (`pgvector/pgvector:pg16`, bound to 127.0.0.1:5432, healthchecked) and is managed through `pnpm db:*` scripts: every teammate gets the same database with no local install.
