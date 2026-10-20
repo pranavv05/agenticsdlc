@@ -34,7 +34,7 @@ const { data, usage } = await generateStructured({
 
 ## Models
 
-The model comes from the call's `model`, else `LLM_MODEL` (the legacy `SDD_MODEL` and `CLAUDE_MODEL` still work), else `claude-sonnet-5-5` when `NODE_ENV=production` and the cheaper `claude-haiku-5-5` everywhere else. **Set `LLM_MODEL` for real evaluation runs.**
+The model comes from the call's `model`, else `LLM_MODEL`, else `claude-sonnet-5-5` when `NODE_ENV=production` and the cheaper `claude-haiku-5-5` everywhere else. **Set `LLM_MODEL` for real evaluation runs.**
 
 Every model needs a price in `src/prices.ts` (versioned by `PRICE_TABLE_VERSION`); a model without one is rejected before anything is sent, so a cost can never silently be $0.
 
@@ -58,9 +58,9 @@ Every model needs a price in `src/prices.ts` (versioned by `PRICE_TABLE_VERSION`
 
 Wraps text from a user or repository as data: an instruction before the block, markers carrying a hash of the content (so the closing marker cannot be forged from inside the text), `<<<` and `>>>` neutralised, control characters removed. Over `maxChars` (default 50,000) it throws instead of truncating. It lowers prompt-injection risk; it does not remove it, so agents must still validate their output.
 
-## Providers
+## Credentials
 
-`LLM_PROVIDER=anthropic` (default) uses `ANTHROPIC_API_KEY` or whatever credentials the SDK resolves. `LLM_PROVIDER=bedrock` uses the bearer-token invoke endpoint from the prototype: set `BEDROCK_API_KEY` (or `AWS_BEARER_TOKEN_BEDROCK`), `AWS_REGION` and `LLM_MODEL` (a Bedrock model or inference-profile id; prices are matched on the Claude name inside it).
+The gateway calls the Claude API directly. Set `ANTHROPIC_API_KEY`, or use any credentials the Anthropic SDK resolves. Embeddings need `VOYAGE_API_KEY`. In `LLM_MODE=mock` neither is needed.
 
 ## Wiring it up
 

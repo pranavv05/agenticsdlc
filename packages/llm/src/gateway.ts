@@ -15,17 +15,9 @@ import { FixtureStore, fixtureKey } from "./fixtures";
 import { resolveModel, supportsForcedToolChoice } from "./models";
 import { MODEL_PRICES, computeCostUsd, normalizeModelId } from "./prices";
 import { backoffDelay } from "./retry";
-import {
-  createAnthropicTransport,
-  createBedrockTransport,
-  type Effort,
-  type LlmRequest,
-  type LlmResponse,
-  type Transport,
-} from "./transport";
+import { createAnthropicTransport, type Effort, type LlmRequest, type LlmResponse, type Transport } from "./transport";
 
 export type LlmMode = "live" | "mock" | "record";
-export type LlmProvider = "anthropic" | "bedrock";
 
 export interface Usage {
   inputTokens: number;
@@ -92,8 +84,6 @@ export interface TextResult {
 export interface GatewayOptions {
   /** "live" calls the model, "mock" serves fixtures, "record" calls the model and saves fixtures. Default: LLM_MODE or "live". */
   mode?: LlmMode;
-  /** Default: LLM_PROVIDER or "anthropic". */
-  provider?: LlmProvider;
   /** Replaces the real HTTP transport (tests). */
   transport?: Transport;
   fixtures?: FixtureStore;
@@ -116,7 +106,6 @@ export interface GatewayOptions {
 
 export interface Gateway {
   readonly mode: LlmMode;
-  readonly provider: LlmProvider;
   readonly fixtures: FixtureStore;
   generateStructured<S extends z.ZodType>(request: StructuredRequest<S>): Promise<StructuredResult<z.output<S>>>;
   generateText(request: TextRequest): Promise<TextResult>;
@@ -128,12 +117,6 @@ function parseMode(value: string | undefined): LlmMode {
   if (value === undefined || value === "") return "live";
   if (value === "live" || value === "mock" || value === "record") return value;
   throw new LlmConfigError(`LLM_MODE must be "live", "mock" or "record", got "${value}"`);
-}
-
-function parseProvider(value: string | undefined): LlmProvider {
-  if (value === undefined || value === "") return "anthropic";
-  if (value === "anthropic" || value === "bedrock") return value;
-  throw new LlmConfigError(`LLM_PROVIDER must be "anthropic" or "bedrock", got "${value}"`);
 }
 
 function envNumber(value: string | undefined, fallback: number): number {
@@ -155,7 +138,6 @@ function formatIssues(issues: readonly { path: PropertyKey[]; message: string }[
 export function createGateway(options: GatewayOptions = {}): Gateway {
   const env = options.env ?? process.env;
   const mode = options.mode ?? parseMode(env.LLM_MODE);
-  const provider = options.provider ?? parseProvider(env.LLM_PROVIDER);
   const timeoutMs = options.timeoutMs ?? envNumber(env.LLM_TIMEOUT_MS, 120_000);
   const maxRetries = options.maxRetries ?? envNumber(env.LLM_MAX_RETRIES, 4);
   const baseDelayMs = options.baseDelayMs ?? 1_000;
@@ -170,10 +152,7 @@ export function createGateway(options: GatewayOptions = {}): Gateway {
 
   let transport = options.transport;
   const getTransport = (): Transport => {
-    transport ??=
-      provider === "bedrock"
-        ? createBedrockTransport({ apiKey: env.BEDROCK_API_KEY || env.AWS_BEARER_TOKEN_BEDROCK || "", region: env.AWS_REGION || "" })
-        : createAnthropicTransport();
+    transport ??= createAnthropicTransport();
     return transport;
   };
 
@@ -193,7 +172,7 @@ export function createGateway(options: GatewayOptions = {}): Gateway {
     if (!Number.isInteger(maxTokens) || maxTokens < 1) throw new LlmInputError(`maxTokens must be a positive integer, got ${maxTokens}`);
     if (maxTokens > maxTokensCap) throw new LlmInputError(`maxTokens ${maxTokens} is over the hard cap of ${maxTokensCap} per call`);
 
-    const model = resolveModel(request.model, env, provider);
+    const model = resolveModel(request.model, env);
     // Fail before spending anything if the cost of this model cannot be computed.
     try {
       computeCostUsd(model, { inputTokens: 0, outputTokens: 0 });
@@ -461,7 +440,7 @@ export function createGateway(options: GatewayOptions = {}): Gateway {
     return { text: sent.response.text, truncated, usage };
   }
 
-  return { mode, provider, fixtures, generateStructured, generateText };
+  return { mode, fixtures, generateStructured, generateText };
 }
 
 // ---- process-wide default, so agents can just `import { generateStructured }` ----
