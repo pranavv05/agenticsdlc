@@ -1,7 +1,11 @@
-node_modules
-.next
+node_modules/
+.next/
+dist/
+output/
+coverage/
 .env
 .env.local
-output/
+.env.*.local
 *.tsbuildinfo
 next-env.d.ts
+.DS_Store

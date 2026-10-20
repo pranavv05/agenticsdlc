@@ -1,0 +1,17 @@
+{
+  "name": "@sdd/llm",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "LLM gateway: the only module that calls the Anthropic SDK.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "typescript": "5.9.3"
+  }
+}

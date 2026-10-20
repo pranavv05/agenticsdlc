@@ -1,0 +1,8 @@
+# Default owner for everything.
+* @pranavv05
+
+/packages/ui/          @sourav1465
+/packages/mcp-server/  @tejaswalikar007
+/docker-compose.yml    @tejaswalikar007
+/packages/eval/        @shuraimk27 @sourav1465 @tejaswalikar007
+/docs/API.md           @pranavv05 @shuraimk27

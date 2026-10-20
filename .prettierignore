@@ -1,0 +1,6 @@
+node_modules
+.next
+output
+pnpm-lock.yaml
+packages/context/test/fixtures
+docs/scope.pdf
