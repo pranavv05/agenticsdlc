@@ -42,8 +42,7 @@ To use the Context Agent console:
 ```bash
 cp .env.example .env     # fill ANTHROPIC_API_KEY and VOYAGE_API_KEY (the DATABASE_URL default matches docker-compose)
 pnpm db:up               # Postgres + pgvector in Docker; applies packages/context/schema.sql on first start
-# edit apps/context-console/repos.config.json with your repos (name, absolute path, description)
-pnpm dev:console         # http://localhost:3000 - open /indexing, then /query
+pnpm dev:console         # http://localhost:3000 - /indexing: register a repo (folder or Git URL), then index it; /query: try retrieval
 ```
 
 Database helpers: `pnpm db:down` (stop, keep data), `pnpm db:reset` (wipe and re-apply the schema), `pnpm db:psql` (open a psql shell).
@@ -53,6 +52,7 @@ The Postgres tests (`packages/context/test/store.test.ts`, `indexing.pg.test.ts`
 ## Context Agent notes
 
 - Generated docs and mind maps go to `output/` (or `CONTEXT_OUTPUT_DIR`), never into the target repo: `output/<repoId>/docs/<module>/CLAUDE.md.generated.md`, `output/<repoId>/mindmap.md`, `output/system.md`. They can be copied into a repo on request and an existing `CLAUDE.md` is never touched.
+- Profile any folder or Git URL from the terminal: `pnpm --filter @sdd/context repo:profile <folder | url>` prints file count, lines of code per language and the recommended strategy (full pipeline from 200 source files, otherwise CLAUDE.md only).
 - Getting context for a task (the seam the orchestrator uses):
 
   ```ts

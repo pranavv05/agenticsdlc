@@ -1482,7 +1482,7 @@ Example request line: `GET /api/repos/billing-service`
 `POST /api/repos/:id/index`
 
 Starts indexing in the background and returns status `indexing`; poll `GET /api/repos/:id` until it is `indexed`.
-`strategy` defaults to the profile's recommendation. Allowed when the status is `profiled`, `indexed` or `failed` (with a profile). Re-indexing an `indexed` repo refreshes it; the previous index stays in place until the new one succeeds.
+`strategy` defaults to the profile's recommendation. Allowed when the status is `profiled`, `indexed` or `failed`; a repo whose profiling failed is profiled again first. Re-indexing an `indexed` repo refreshes it (a repo registered by URL is pulled first); the previous index stays in place until the new one succeeds.
 
 Example request line: `POST /api/repos/billing-service/index`
 

@@ -2,6 +2,7 @@ node_modules/
 .next/
 dist/
 output/
+.cache/
 coverage/
 .env
 .env.local
