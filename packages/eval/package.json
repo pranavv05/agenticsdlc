@@ -3,15 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Evaluation cases, runner and scoring.",
+  "description": "Evaluation cases, runner and scoring. The retrieval-quality harness is in retrieval/.",
   "exports": {
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "retrieval": "tsx retrieval/run.ts"
+  },
+  "dependencies": {
+    "@sdd/context": "workspace:*",
+    "@sdd/contracts": "workspace:*",
+    "@sdd/llm": "workspace:*",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "26.6.5",
-    "typescript": "5.9.3"
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
   }
 }

@@ -1,0 +1,27 @@
+{
+  "name": "billing-auth",
+  "description": "The tiny TypeScript fixture used by the Context Agent tests (two modules, 6 files). Too small to separate the modes; it keeps the harness honest on a repo anyone can read in a minute.",
+  "repo": "../../../context/test/fixtures/sample-repo",
+  "cases": [
+    {
+      "task": "Charge a customer's card and refund part of an invoice payment",
+      "expectedFiles": ["modules/billing/payments.ts"]
+    },
+    {
+      "task": "Issue and verify session tokens when a user logs in",
+      "expectedFiles": ["modules/auth/tokens.ts", "modules/auth/session.ts"]
+    },
+    {
+      "task": "Calculate the invoice total from a list of line items",
+      "expectedFiles": ["modules/billing/invoice.ts"]
+    },
+    {
+      "task": "Hash user passwords and check them when someone signs in",
+      "expectedFiles": ["modules/auth/password.ts"]
+    },
+    {
+      "task": "Only let signed-in users reach billing",
+      "expectedFiles": ["modules/billing/guard.ts", "modules/auth/session.ts"]
+    }
+  ]
+}

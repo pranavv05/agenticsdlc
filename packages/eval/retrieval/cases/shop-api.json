@@ -1,0 +1,80 @@
+{
+  "name": "shop-api",
+  "description": "A small online shop backend (orders, payments, inventory, shipping, users; 28 files). Each task lists the files a developer would need to touch or read. Tasks 11 and 12 deliberately use different words than the code (reimburse, expire) to separate keyword search from embeddings.",
+  "repo": "../repos/shop-api",
+  "cases": [
+    {
+      "task": "Send the customer an email with their receipt as soon as the payment goes through",
+      "expectedFiles": ["src/modules/payments/receipts.ts", "src/modules/payments/paymentService.ts", "src/modules/orders/orderService.ts"]
+    },
+    {
+      "task": "Add partial refunds so support can return part of an order's money without cancelling the order",
+      "expectedFiles": [
+        "src/modules/payments/paymentService.ts",
+        "src/modules/payments/paymentRoutes.ts",
+        "src/modules/payments/gateway.ts"
+      ]
+    },
+    {
+      "task": "Screen orders for fraud using the shipping country as well as the order value before the card is charged",
+      "expectedFiles": ["src/modules/payments/fraud.ts", "src/modules/orders/orderService.ts"]
+    },
+    {
+      "task": "Automatically reorder products from the supplier when stock gets low",
+      "expectedFiles": ["src/modules/inventory/restock.ts", "src/modules/inventory/stock.ts"]
+    },
+    {
+      "task": "Reject orders for product codes that do not follow our SKU format",
+      "expectedFiles": ["src/modules/inventory/sku.ts", "src/modules/orders/orderService.ts"]
+    },
+    {
+      "task": "Check the postal code of the delivery address before we create a shipment",
+      "expectedFiles": [
+        "src/modules/shipping/address.ts",
+        "src/modules/shipping/shippingService.ts",
+        "src/modules/shipping/shippingRoutes.ts"
+      ]
+    },
+    {
+      "task": "Show customers the delivery options from each carrier and let them pick the fastest one",
+      "expectedFiles": [
+        "src/modules/shipping/carriers.ts",
+        "src/modules/shipping/shippingService.ts",
+        "src/modules/shipping/shippingRoutes.ts"
+      ]
+    },
+    {
+      "task": "Print shipping labels as PDF instead of the printer language",
+      "expectedFiles": ["src/modules/shipping/labels.ts", "src/modules/shipping/shippingService.ts"]
+    },
+    {
+      "task": "Require a second verification step when an admin signs in",
+      "expectedFiles": [
+        "src/modules/users/userService.ts",
+        "src/modules/users/sessions.ts",
+        "src/modules/users/permissions.ts",
+        "src/modules/users/userRoutes.ts"
+      ]
+    },
+    {
+      "task": "Let staff see all orders in a given state, such as paid or shipped",
+      "expectedFiles": ["src/modules/orders/orderRepo.ts", "src/modules/orders/orderRoutes.ts", "src/modules/users/permissions.ts"]
+    },
+    {
+      "task": "Reimburse a customer when the warehouse cannot fulfil part of their order",
+      "expectedFiles": ["src/modules/payments/paymentService.ts", "src/modules/inventory/stock.ts", "src/modules/orders/orderService.ts"]
+    },
+    {
+      "task": "Make passwords expire after ninety days and force a change at the next login",
+      "expectedFiles": ["src/modules/users/passwords.ts", "src/modules/users/userService.ts"]
+    },
+    {
+      "task": "Let customers follow their parcel and see when it was delivered",
+      "expectedFiles": ["src/modules/shipping/shippingService.ts", "src/modules/shipping/shippingRoutes.ts"]
+    },
+    {
+      "task": "Stop selling a product when every warehouse is out of stock",
+      "expectedFiles": ["src/modules/inventory/stock.ts", "src/modules/inventory/warehouse.ts", "src/modules/inventory/inventoryRoutes.ts"]
+    }
+  ]
+}
