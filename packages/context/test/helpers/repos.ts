@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 export const FIXTURES = path.resolve(import.meta.dirname, "../fixtures");
 
@@ -58,4 +59,43 @@ export function head(repo: string): string {
 
 export function rmrf(dir: string): void {
   fs.rmSync(dir, { recursive: true, force: true });
+}
+
+export interface Remote {
+  /** A file:// URL that git can clone from (tests allow the "file" protocol explicitly). */
+  url: string;
+  /** The working repo behind the remote: edit and `publish` to give the remote a new commit. */
+  work: string;
+  publish(files: Record<string, string | null>, message?: string): string;
+}
+
+/** A bare "remote" repository, optionally seeded from a fixture, so clone and refresh can be tested without a network. */
+export function makeRemote(seed: { fixture: string } | { files: Record<string, string> }): Remote {
+  const root = tmpDir("sdd-remote-");
+  const work = path.join(root, "work");
+  fs.mkdirSync(work);
+  if ("fixture" in seed) fs.cpSync(path.join(FIXTURES, seed.fixture), work, { recursive: true });
+  else for (const [rel, content] of Object.entries(seed.files)) write(work, rel, content);
+  git(work, "init", "-q", "-b", "main");
+  git(work, "add", "-A");
+  git(work, "commit", "-q", "-m", "initial");
+  const bare = path.join(root, "remote.git");
+  git(root, "clone", "-q", "--bare", work, bare);
+  git(work, "remote", "add", "origin", bare);
+  git(work, "fetch", "-q", "origin");
+  git(work, "branch", "-q", "--set-upstream-to=origin/main", "main");
+  return {
+    url: pathToFileURL(bare).href,
+    work,
+    publish(files, message = "update") {
+      for (const [rel, content] of Object.entries(files)) {
+        if (content === null) fs.rmSync(path.join(work, ...rel.split("/")), { force: true });
+        else write(work, rel, content);
+      }
+      git(work, "add", "-A");
+      git(work, "commit", "-q", "-m", message);
+      git(work, "push", "-q", "origin", "main");
+      return git(work, "rev-parse", "HEAD");
+    },
+  };
 }
