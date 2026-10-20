@@ -71,7 +71,7 @@ export default function QueryPage() {
         body: JSON.stringify({ repoId, task: text, mode, budgetTokens: budget }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? res.statusText);
+      if (!res.ok) throw new Error(json.error?.message ?? res.statusText);
       setBundle(json);
     } catch (e) {
       setError((e as Error).message);

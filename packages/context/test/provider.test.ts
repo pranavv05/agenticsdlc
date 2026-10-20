@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DocsOutput } from "../src/docsOutput";
 import { indexRepo } from "../src/pipeline";
-import { ContextError, NullContextProvider, RepoContextProvider, type RepoContextProviderOptions } from "../src/provider";
+import { ContextError, NullContextProvider, RepoContextProvider, isContextError, type RepoContextProviderOptions } from "../src/provider";
 import { MemoryContextStore } from "../src/store/memory";
 import type { ContextStore } from "../src/store/types";
 import type { RepoTarget } from "../src/types";
@@ -324,6 +324,15 @@ describe("RepoContextProvider: module docs steer the claude-md mode", () => {
     expect(bundle.relevantMindmapExcerpt).toContain('B["modules/billing"]');
     expect(bundle.relevantMindmapExcerpt).toContain("B -->|imports| A");
     expect(bundle.relevantMindmapExcerpt).not.toContain("modules/reports");
+  });
+});
+
+describe("isContextError", () => {
+  it("recognises a ContextError by name, even from another copy of the class, and nothing else", () => {
+    expect(isContextError(new ContextError("empty_task", "x"))).toBe(true);
+    expect(isContextError(Object.assign(new Error("copy"), { name: "ContextError", code: "repo_not_found" }))).toBe(true);
+    for (const value of [new Error("plain"), "ContextError", null, { name: "ContextError", code: "x" }])
+      expect(isContextError(value)).toBe(false);
   });
 });
 

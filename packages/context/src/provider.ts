@@ -21,6 +21,11 @@ export class ContextError extends Error {
   }
 }
 
+/** True for a ContextError; by name rather than `instanceof`, for the same reason as `isRegistryError`. */
+export function isContextError(error: unknown): error is ContextError {
+  return error instanceof Error && error.name === "ContextError" && typeof (error as { code?: unknown }).code === "string";
+}
+
 /** Case A: there is no repo to ground in, so the bundle is empty. A fresh object each call, so callers may mutate it. */
 export class NullContextProvider implements ContextProvider {
   async getContext(_request?: ContextRequest): Promise<ContextBundle> {
