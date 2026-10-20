@@ -52,6 +52,7 @@ The Postgres tests (`packages/context/test/store.test.ts`, `indexing.pg.test.ts`
 ## Context Agent notes
 
 - Generated docs and mind maps go to `output/` (or `CONTEXT_OUTPUT_DIR`), never into the target repo: `output/<repoId>/docs/<module>/CLAUDE.md.generated.md`, `output/<repoId>/mindmap.md`, `output/system.md`. They can be copied into a repo on request and an existing `CLAUDE.md` is never touched.
+- Compare the retrieval modes: `pnpm --filter @sdd/eval retrieval` reports recall@k, precision@k and tokens for `claude-md`, `embeddings` and `hybrid` on labelled tasks (offline mock run by default; `--live` for real numbers). See [`packages/eval/retrieval/README.md`](packages/eval/retrieval/README.md).
 - Profile any folder or Git URL from the terminal: `pnpm --filter @sdd/context repo:profile <folder | url>` prints file count, lines of code per language and the recommended strategy (full pipeline from 200 source files, otherwise CLAUDE.md only).
 - Getting context for a task (the seam the orchestrator uses):
 
