@@ -11,10 +11,10 @@ import {
   wrapUntrusted,
   type UsageRecord,
 } from "@sdd/llm";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { generateModuleClaudeMd, generateRootClaudeMd } from "../src/claudeMd";
 import { embedChunks, embedTexts } from "../src/embed";
-import { generateMindmaps, generateSystemMindmap } from "../src/mindmap";
+import { generateMindmap, generateSystemMindmap } from "../src/mindmap";
 import type { ChunkRecord, ModuleDoc } from "../src/types";
 
 const FIXTURE_REPO = path.join(import.meta.dirname, "fixtures/sample-repo");
@@ -35,7 +35,7 @@ function captureGateway() {
 }
 
 const chunk = (code: string): ChunkRecord => ({
-  repoName: "r",
+  repoId: "r",
   filePath: "modules/auth/password.ts",
   symbolName: "hash",
   chunkType: "function",
@@ -44,14 +44,9 @@ const chunk = (code: string): ChunkRecord => ({
   endLine: 5,
 });
 
-let tmp: string;
-beforeEach(() => {
-  tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sdd-context-out-"));
-});
 afterEach(() => {
   setGateway(undefined);
   setEmbedder(undefined);
-  fs.rmSync(tmp, { recursive: true, force: true });
 });
 
 describe("embeddings go through the gateway", () => {
@@ -103,7 +98,7 @@ describe("documentation prompts treat repo content as untrusted data", () => {
   it("wraps the README, file list and module summaries of the root document", async () => {
     const { prompts } = captureGateway();
     const md = await generateRootClaudeMd(
-      { name: "sample", path: FIXTURE_REPO, description: "Fixture repo" },
+      { id: "sample", name: "sample", path: FIXTURE_REPO },
       [{ dir: "modules/auth", summary: "Auth module.", claudeMdPath: "x" }],
       {
         fileList: ["README.md", "package.json"],
@@ -121,11 +116,11 @@ describe("documentation prompts treat repo content as untrusted data", () => {
       { dir: "modules/auth", summary: "Auth.", claudeMdPath: "a" },
       { dir: "modules/billing", summary: "Billing.", claudeMdPath: "b" },
     ];
-    const repoMap = await generateMindmaps({ name: "sample", path: FIXTURE_REPO, description: "d" }, modules, [], {
-      outputDir: tmp,
+    const target = { id: "sample", name: "sample", path: FIXTURE_REPO };
+    const repoMap = await generateMindmap(target, modules, [], {
       edges: [{ filePath: "modules/billing/invoice.ts", importsFilePath: "modules/auth/session.ts" }],
     });
-    const systemMap = await generateSystemMindmap([{ name: "sample", path: FIXTURE_REPO, description: "d" }], [], tmp);
+    const systemMap = await generateSystemMindmap([target], []);
 
     expect(prompts.map((p) => p.name)).toEqual(["repo-mindmap", "system-mindmap"]);
     expect(prompts[0].input).toContain('<<<UNTRUSTED label="module-summaries"');
@@ -133,6 +128,5 @@ describe("documentation prompts treat repo content as untrusted data", () => {
     expect(prompts[1].input).toContain('<<<UNTRUSTED label="repos"');
     expect(repoMap.mermaid).toContain("flowchart");
     expect(systemMap.mermaid).toContain("flowchart");
-    expect(fs.readdirSync(tmp).length).toBeGreaterThan(0);
   });
 });

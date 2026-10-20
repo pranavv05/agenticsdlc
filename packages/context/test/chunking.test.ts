@@ -20,7 +20,7 @@ describe("static analysis on the fixture repo", () => {
   });
 
   it("resolves intra- and cross-module imports", async () => {
-    const edges = await extractDependencies(FIXTURE, "fixture");
+    const edges = await extractDependencies(FIXTURE);
     const has = (a: string, b: string) => edges.some((e) => e.filePath === a && e.importsFilePath === b);
     expect(has("modules/auth/session.ts", "modules/auth/tokens.ts")).toBe(true);
     expect(has("modules/billing/payments.ts", "modules/billing/invoice.ts")).toBe(true);
@@ -46,7 +46,7 @@ describe("java support", () => {
   });
 
   it("resolves imports (single-type and wildcard) via package declarations", async () => {
-    const edges = await extractDependencies(JAVA, "java");
+    const edges = await extractDependencies(JAVA);
     const base = "src/main/java/com/acme";
     const has = (a: string, b: string) => edges.some((e) => e.filePath === `${base}/${a}` && e.importsFilePath === `${base}/${b}`);
     expect(has("billing/InvoiceService.java", "auth/AuthService.java")).toBe(true);

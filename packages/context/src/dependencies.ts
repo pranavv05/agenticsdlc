@@ -134,8 +134,7 @@ function javaImports(root: Node, idx: { byFqn: Map<string, string>; byPackage: M
 }
 
 /** Parse import/require/from-import statements and return resolved intra-repo file edges. */
-export async function extractDependencies(repoPath: string, repoName: string, walked?: WalkedFile[]): Promise<DependencyEdge[]> {
-  void repoName;
+export async function extractDependencies(repoPath: string, walked?: WalkedFile[]): Promise<DependencyEdge[]> {
   const all = walked ?? (await walkRepo(repoPath));
   const sources = all.filter((f) => langForFile(f.rel));
   const fileSet = new Set(sources.map((f) => f.rel));

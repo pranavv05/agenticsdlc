@@ -1,14 +1,16 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-import type { CrossRepoLink, DependencyEdge, ModuleDoc, RepoConfig } from "./types";
 import { generateText, wrapUntrusted } from "@sdd/llm";
-import { safeName } from "./config";
+import type { CrossRepoLink, DependencyEdge, ModuleDoc, RepoTarget } from "./types";
 
 const SYSTEM_PROMPT =
   "You produce Mermaid diagrams for software architecture documentation. " +
   'Rules: use `flowchart LR`; node ids must be simple alphanumerics (A, B, mod1...); put every label in double quotes, e.g. A["billing"]; ' +
   "no parentheses, brackets or colons inside labels; output exactly one ```mermaid fenced block followed by a short prose explanation (3-6 sentences). " +
   "Only draw relationships supported by the input.";
+
+export interface Mindmap {
+  mermaid: string;
+  prose: string;
+}
 
 /** One mindmap call through the gateway. `name` becomes the usage record name and the mock fixture key. */
 async function generateDiagram(name: string, prompt: string): Promise<string> {
@@ -45,7 +47,7 @@ function moduleEdges(modules: ModuleDoc[], edges: DependencyEdge[]): { from: str
   });
 }
 
-function fallbackRepoDiagram(repo: RepoConfig, modules: ModuleDoc[], edges: ReturnType<typeof moduleEdges>): string {
+function fallbackRepoDiagram(repo: RepoTarget, modules: ModuleDoc[], edges: ReturnType<typeof moduleEdges>): string {
   const id = (d: string) => "m_" + d.replace(/[^A-Za-z0-9]/g, "_");
   const lines = ["flowchart LR", `  root["${repo.name}"]`];
   for (const m of modules) lines.push(`  ${id(m.dir)}["${m.dir}"]`, `  root --> ${id(m.dir)}`);
@@ -53,25 +55,16 @@ function fallbackRepoDiagram(repo: RepoConfig, modules: ModuleDoc[], edges: Retu
   return lines.join("\n");
 }
 
-async function write(outDir: string, base: string, mermaid: string, prose: string, title: string): Promise<void> {
-  await fs.mkdir(outDir, { recursive: true });
-  await fs.writeFile(path.join(outDir, `${base}.mmd`), mermaid + "\n", "utf8");
-  await fs.writeFile(path.join(outDir, `${base}.md`), `# ${title}\n\n\`\`\`mermaid\n${mermaid}\n\`\`\`\n\n${prose}\n`, "utf8");
-}
-
-/**
- * Per-repo mindmap: one Mermaid diagram + short prose showing the repo's internal module structure.
- * Writes output/<repo>.mmd and output/<repo>.md.
- */
-export async function generateMindmaps(
-  repo: RepoConfig,
+/** Per-repo mindmap: one Mermaid diagram plus a short explanation of the repo's internal module structure. */
+export async function generateMindmap(
+  repo: RepoTarget,
   modules: ModuleDoc[],
   crossRepoLinks: CrossRepoLink[],
-  opts: { outputDir: string; edges?: DependencyEdge[] },
-): Promise<{ mermaid: string; prose: string }> {
+  opts: { edges?: DependencyEdge[] } = {},
+): Promise<Mindmap> {
   const edges = moduleEdges(modules, opts.edges ?? []);
-  const cross = crossRepoLinks.filter((l) => l.fromRepo === repo.name || l.toRepo === repo.name);
-  const prompt = `Draw the internal module structure of repo "${repo.name}" (${repo.description}).
+  const cross = crossRepoLinks.filter((l) => l.fromRepo === repo.id || l.toRepo === repo.id);
+  const prompt = `Draw the internal module structure of repo "${repo.name}".
 
 Modules:
 ${wrapUntrusted("module-summaries", modules.map((m) => `- ${m.dir}: ${m.summary}`).join("\n") || "(none detected)")}
@@ -83,33 +76,27 @@ Cross-repo links touching this repo (mention in prose only, do not draw other re
 ${cross.map((l) => `- ${l.fromRepo} -> ${l.toRepo}`).join("\n") || "(none)"}`;
 
   const { mermaid, prose } = splitResponse(await generateDiagram("repo-mindmap", prompt));
-  const finalMermaid = mermaid ?? fallbackRepoDiagram(repo, modules, edges);
-  await write(opts.outputDir, safeName(repo.name), finalMermaid, prose, `${repo.name} — module structure`);
-  return { mermaid: finalMermaid, prose };
+  return { mermaid: mermaid ?? fallbackRepoDiagram(repo, modules, edges), prose };
 }
 
-/** System-level mindmap: every configured repo as a node, connected via crossRepoLinks. */
-export async function generateSystemMindmap(
-  repos: RepoConfig[],
-  crossRepoLinks: CrossRepoLink[],
-  outputDir: string,
-): Promise<{ mermaid: string; prose: string }> {
+/** System-level mindmap: every repo as a node, connected via cross-repo links. */
+export async function generateSystemMindmap(repos: RepoTarget[], crossRepoLinks: CrossRepoLink[]): Promise<Mindmap> {
   const prompt = `Draw the system-level architecture: every repo below is a node; connect repos using the links (arrow from -> to).
 
 Repos:
-${wrapUntrusted("repos", repos.map((r) => `- ${r.name}: ${r.description}`).join("\n"))}
+${wrapUntrusted("repos", repos.map((r) => `- ${r.name}`).join("\n"))}
 
 Links with evidence:
 ${wrapUntrusted("links", crossRepoLinks.map((l) => `- ${l.fromRepo} -> ${l.toRepo}: ${l.evidence.slice(0, 2).join(" | ")}`).join("\n") || "(none detected; show repos as unconnected nodes)")}`;
 
   const { mermaid, prose } = splitResponse(await generateDiagram("system-mindmap", prompt));
-  const id = (n: string) => "r_" + n.replace(/[^A-Za-z0-9]/g, "_");
+  const id = (repoId: string) => "r_" + repoId.replace(/[^A-Za-z0-9]/g, "_");
   const fallback = [
     "flowchart LR",
-    ...repos.map((r) => `  ${id(r.name)}["${r.name}"]`),
-    ...crossRepoLinks.map((l) => `  ${id(l.fromRepo)} --> ${id(l.toRepo)}`),
+    ...repos.map((r) => `  ${id(r.id)}["${r.name}"]`),
+    ...crossRepoLinks
+      .filter((l) => repos.some((r) => r.id === l.fromRepo) && repos.some((r) => r.id === l.toRepo))
+      .map((l) => `  ${id(l.fromRepo)} --> ${id(l.toRepo)}`),
   ].join("\n");
-  const finalMermaid = mermaid ?? fallback;
-  await write(outputDir, "system", finalMermaid, prose, "System overview");
-  return { mermaid: finalMermaid, prose };
+  return { mermaid: mermaid ?? fallback, prose };
 }

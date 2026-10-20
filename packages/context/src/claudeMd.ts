@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { ChunkRecord, CrossRepoLink, DependencyEdge, ModuleDoc, ModuleInfo, RepoConfig } from "./types";
+import type { ChunkRecord, CrossRepoLink, DependencyEdge, ModuleDoc, ModuleInfo, RepoTarget } from "./types";
 import { isSourceFile } from "./parse";
 import { walkRepo, GENERATED_CLAUDE_MD, type WalkedFile } from "./walk";
 import { generateText, wrapUntrusted } from "@sdd/llm";
@@ -96,14 +96,14 @@ export async function generateModuleClaudeMd(
   moduleDir: string,
   chunks: ChunkRecord[],
   dependencyEdges: DependencyEdge[],
-  opts: { repoName?: string; crossRepoLinks?: CrossRepoLink[] } = {},
+  opts: { repoId?: string; repoName?: string; crossRepoLinks?: CrossRepoLink[] } = {},
 ): Promise<string> {
   const own = chunks.filter((c) => inDir(c.filePath, moduleDir));
   const outgoing = dependencyEdges.filter((e) => inDir(e.filePath, moduleDir) && !inDir(e.importsFilePath, moduleDir));
   const incoming = dependencyEdges.filter((e) => !inDir(e.filePath, moduleDir) && inDir(e.importsFilePath, moduleDir));
   const internal = dependencyEdges.filter((e) => inDir(e.filePath, moduleDir) && inDir(e.importsFilePath, moduleDir));
   const repo = opts.repoName ?? "the repo";
-  const cross = (opts.crossRepoLinks ?? []).filter((l) => l.fromRepo === repo || l.toRepo === repo);
+  const cross = (opts.crossRepoLinks ?? []).filter((l) => l.fromRepo === opts.repoId || l.toRepo === opts.repoId);
 
   const fmt = (es: DependencyEdge[]) =>
     es.length
@@ -180,15 +180,15 @@ async function discoverCommands(repoPath: string): Promise<string> {
 
 /** Root CLAUDE.md: Claude-written overview + deterministic commands and module index table. */
 export async function generateRootClaudeMd(
-  repo: RepoConfig,
+  repo: RepoTarget,
   modules: ModuleDoc[],
   opts: { crossRepoLinks?: CrossRepoLink[]; fileList?: string[] } = {},
 ): Promise<string> {
   const readme = await readIfExists(path.join(repo.path, "README.md"), 4000);
   const commands = await discoverCommands(repo.path);
-  const cross = (opts.crossRepoLinks ?? []).filter((l) => l.fromRepo === repo.name || l.toRepo === repo.name);
+  const cross = (opts.crossRepoLinks ?? []).filter((l) => l.fromRepo === repo.id || l.toRepo === repo.id);
 
-  const prompt = `Write the "Overview" section body for the root CLAUDE.md of repo \`${repo.name}\` (${repo.description}).
+  const prompt = `Write the "Overview" section body for the root CLAUDE.md of repo \`${repo.name}\`.
 Two or three short paragraphs: what the system does, main tech stack, and how the code is organised. No heading, no lists of commands.
 
 # README excerpt
@@ -213,13 +213,5 @@ ${cross.length ? cross.map((l) => `- ${l.fromRepo} -> ${l.toRepo}`).join("\n") :
       ].join("\n")
     : "_No modules detected._";
 
-  return `# ${repo.name}\n\n> ${repo.description}\n\n## Overview\n\n${overview}\n\n## Commands\n\n${commands}\n\n## Modules\n\n${table}\n`;
-}
-
-/** Write <repo>/<dir>/CLAUDE.md.generated.md. Never touches an actual CLAUDE.md. */
-export async function writeGeneratedClaudeMd(repoPath: string, dir: string, content: string): Promise<string> {
-  const rel = claudeMdRelPath(dir);
-  const abs = path.join(repoPath, ...rel.split("/"));
-  await fs.writeFile(abs, content.endsWith("\n") ? content : content + "\n", "utf8");
-  return rel;
+  return `# ${repo.name}\n\n## Overview\n\n${overview}\n\n## Commands\n\n${commands}\n\n## Modules\n\n${table}\n`;
 }

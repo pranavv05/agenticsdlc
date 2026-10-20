@@ -1,7 +1,14 @@
-export { indexAllRepos, SYSTEM_KEY } from "./pipeline";
+export { indexRepo, indexRepos, SYSTEM_KEY } from "./pipeline";
 export type { IndexOptions, IndexResult } from "./pipeline";
 export { queryContext } from "./query";
-export type { ClaudeMdSection, ContextBundle, QueryChunk } from "./query";
+export type { QueryOptions } from "./query";
+export { getContextStore, setContextStore, MemoryContextStore, PgContextStore, EMBEDDING_DIMENSIONS } from "./store";
+export type * from "./store/types";
 export { closePool, getPool } from "./db";
-export { defaultOutputDir, loadRepoConfig, safeName } from "./config";
+export { loadRepoConfig, repoConfigToTarget } from "./config";
+export { slugifyRepoId } from "./repoId";
+export { DocsOutput, defaultOutputRoot, safeName } from "./docsOutput";
+export { planIndex, INCREMENTAL_MAX_CHANGED_SHARE } from "./plan";
+export type { Plan, PlanInput } from "./plan";
+export { diffFiles, isRepoRoot, workingTreeState } from "./git";
 export type * from "./types";
